@@ -21,21 +21,28 @@ function tidToBuffer(tid: number): Buffer {
   return buf;
 }
 
+function readU64LE(data: Uint8Array, offset: number): number {
+  let val = 0;
+  for (let i = 0; i < 8; i++) {
+    val += data[offset + i] * 2 ** (i * 8);
+  }
+  return val;
+}
+
 function bnToLeBuffer(val: number, size: number = 8): Buffer {
   const bn = new BN(val);
   return bn.toArrayLike(Buffer, "le", size);
 }
 
 // Anchor instruction discriminators: SHA256("global:<name>")[0..8]
-// Computed from the deployed Anchor 0.31.1 IDLs.
 const DISC = {
-  initialize:   Buffer.from([175, 175, 109,  31,  13, 152, 155, 237]),
-  register:     Buffer.from([211, 124,  67,  15, 211, 194, 178, 240]),
-  addAppKey:    Buffer.from([201, 126, 254, 221, 111, 252, 221, 120]),
-  revokeAppKey: Buffer.from([ 46,   9, 208,   7,  74,  75, 169, 169]),
-  initProfile:  Buffer.from([210, 162, 212,  95,  95, 186,  89, 119]),
-  follow:       Buffer.from([161,  61, 150, 122, 164, 153,   0,  18]),
-  unfollow:     Buffer.from([122,  47,  24, 161,  12,  85, 224,  68]),
+  initialize:       Buffer.from([175, 175, 109,  31,  13, 152, 155, 237]),
+  register:         Buffer.from([211, 124,  67,  15, 211, 194, 178, 240]),
+  addAppKey:        Buffer.from([201, 126, 254, 221, 111, 252, 221, 120]),
+  initProfile:      Buffer.from([210, 162, 212,  95,  95, 186,  89, 119]),
+  follow:           Buffer.from([161,  61, 150, 122, 164, 153,   0,  18]),
+  unfollow:         Buffer.from([122,  47,  24, 161,  12,  85, 224,  68]),
+  registerUsername: Buffer.from([134,  54, 123, 181,  28, 151,  36,   0]),
 };
 
 // ── PDA Helpers ──────────────────────────────────────────────────────
@@ -82,55 +89,66 @@ function getLinkPda(followerTid: number, followingTid: number): PublicKey {
   )[0];
 }
 
+function getUsernameRecordPda(username: string): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("username"), Buffer.from(username)],
+    PROGRAM_IDS.usernameRegistry
+  )[0];
+}
+
+function getTidUsernamePda(tid: number): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("tid_username"), tidToBuffer(tid)],
+    PROGRAM_IDS.usernameRegistry
+  )[0];
+}
+
 // ── Read Functions ───────────────────────────────────────────────────
 
-/**
- * Look up a TID by custody wallet address.
- * Returns null if the wallet has no TID.
- */
 export async function getTidByCustody(
   connection: Connection,
   walletPubkey: PublicKey
 ): Promise<number | null> {
   const pda = getCustodyLookupPda(walletPubkey);
   const info = await connection.getAccountInfo(pda);
-  if (!info) return null;
+  if (!info || info.data.length < 16) return null;
+  return readU64LE(info.data, 8);
+}
 
-  // CustodyLookup: 8 discriminator + 8 tid + 1 bump
-  if (info.data.length < 16) return null;
-  let tid = 0;
-  for (let i = 0; i < 8; i++) {
-    tid += info.data[8 + i] * 2 ** (i * 8);
-  }
-  return tid;
+export async function hasUsername(
+  connection: Connection,
+  tid: number
+): Promise<boolean> {
+  const pda = getTidUsernamePda(tid);
+  const info = await connection.getAccountInfo(pda);
+  return info !== null;
+}
+
+export async function hasSocialProfile(
+  connection: Connection,
+  tid: number
+): Promise<boolean> {
+  const pda = getSocialProfilePda(tid);
+  const info = await connection.getAccountInfo(pda);
+  return info !== null;
 }
 
 // ── Write Functions ──────────────────────────────────────────────────
 
-/**
- * Register a new TID for the connected wallet.
- */
 export async function registerTid(
   provider: AnchorProvider,
   recoveryAddress: PublicKey
 ): Promise<{ tx: string; tid: number }> {
   const globalState = getGlobalStatePda();
-
-  // Read current tid_counter from GlobalState
   const info = await provider.connection.getAccountInfo(globalState);
   if (!info) throw new Error("Global state not initialized");
 
-  // GlobalState: 8 disc + 8 tid_counter + 32 authority + 1 bump
-  let tidCounter = 0;
-  for (let i = 0; i < 8; i++) {
-    tidCounter += info.data[8 + i] * 2 ** (i * 8);
-  }
+  const tidCounter = readU64LE(info.data, 8);
   const nextTid = tidCounter + 1;
 
   const tidRecord = getTidRecordPda(nextTid);
   const custodyLookup = getCustodyLookupPda(provider.wallet.publicKey);
 
-  // Instruction data: 8 discriminator + 32 recovery_address
   const data = Buffer.concat([
     DISC.register,
     recoveryAddress.toBuffer(),
@@ -153,9 +171,6 @@ export async function registerTid(
   return { tx: sig, tid: nextTid };
 }
 
-/**
- * Add an app key for tweet signing.
- */
 export async function addAppKey(
   provider: AnchorProvider,
   tid: number,
@@ -166,7 +181,6 @@ export async function addAppKey(
   const tidRecord = getTidRecordPda(tid);
   const appKeyRecord = getAppKeyPda(tid, appPubkey);
 
-  // Instruction data: 8 disc + 32 app_pubkey + 1 scope + 8 expires_at (i64 LE)
   const data = Buffer.concat([
     DISC.addAppKey,
     appPubkey.toBuffer(),
@@ -189,9 +203,42 @@ export async function addAppKey(
   return provider.sendAndConfirm(txn);
 }
 
-/**
- * Initialize a social profile (required before follow).
- */
+export async function registerUsername(
+  provider: AnchorProvider,
+  tid: number,
+  username: string
+): Promise<string> {
+  const tidRecord = getTidRecordPda(tid);
+  const usernameRecord = getUsernameRecordPda(username);
+  const tidUsername = getTidUsernamePda(tid);
+
+  // Anchor string serialization: 4-byte LE length prefix + UTF-8 bytes
+  const usernameBytes = Buffer.from(username, "utf-8");
+  const lenBuf = Buffer.alloc(4);
+  lenBuf.writeUInt32LE(usernameBytes.length);
+
+  const data = Buffer.concat([
+    DISC.registerUsername,
+    lenBuf,
+    usernameBytes,
+  ]);
+
+  const ix = new TransactionInstruction({
+    programId: PROGRAM_IDS.usernameRegistry,
+    keys: [
+      { pubkey: tidRecord, isSigner: false, isWritable: false },
+      { pubkey: usernameRecord, isSigner: false, isWritable: true },
+      { pubkey: tidUsername, isSigner: false, isWritable: true },
+      { pubkey: provider.wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+
+  const txn = new Transaction().add(ix);
+  return provider.sendAndConfirm(txn);
+}
+
 export async function initSocialProfile(
   provider: AnchorProvider,
   tid: number
@@ -214,9 +261,6 @@ export async function initSocialProfile(
   return provider.sendAndConfirm(txn);
 }
 
-/**
- * Follow a user.
- */
 export async function follow(
   provider: AnchorProvider,
   followerTid: number,
@@ -244,9 +288,6 @@ export async function follow(
   return provider.sendAndConfirm(txn);
 }
 
-/**
- * Unfollow a user.
- */
 export async function unfollow(
   provider: AnchorProvider,
   followerTid: number,

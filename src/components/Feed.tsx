@@ -9,15 +9,16 @@ interface Tweet {
   tid?: string | number;
   text?: string;
   timestamp?: string | number;
-  username?: string;
+  username?: string | null;
 }
 
 interface FeedProps {
   tid?: string;
+  myTid?: number;
   refreshKey?: number;
 }
 
-export default function Feed({ tid, refreshKey }: FeedProps) {
+export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,18 +29,12 @@ export default function Feed({ tid, refreshKey }: FeedProps) {
     try {
       let data;
       try {
-        // Try global feed from indexer first, then tweet server
         data = tid ? await fetchFeed(tid) : await fetchFeed();
       } catch {
-        // Fallback to tweet server direct
-        data = tid
-          ? await fetchTweets(tid)
-          : await fetchGlobalFeed();
+        data = tid ? await fetchTweets(tid) : await fetchGlobalFeed();
       }
 
-      const tweetList = Array.isArray(data)
-        ? data
-        : data?.tweets ?? [];
+      const tweetList = Array.isArray(data) ? data : data?.tweets ?? [];
       setTweets(tweetList);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load feed");
@@ -52,7 +47,13 @@ export default function Feed({ tid, refreshKey }: FeedProps) {
     loadTweets();
   }, [loadTweets, refreshKey]);
 
-  if (loading) {
+  // Auto-refresh every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(loadTweets, 15000);
+    return () => clearInterval(interval);
+  }, [loadTweets]);
+
+  if (loading && tweets.length === 0) {
     return (
       <div className="flex justify-center py-8">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
@@ -60,7 +61,7 @@ export default function Feed({ tid, refreshKey }: FeedProps) {
     );
   }
 
-  if (error) {
+  if (error && tweets.length === 0) {
     return (
       <div className="px-4 py-8 text-center">
         <p className="text-gray-500">{error}</p>
@@ -100,6 +101,8 @@ export default function Feed({ tid, refreshKey }: FeedProps) {
             tid={Number(tweetTid)}
             timestamp={tweetTimestamp}
             hash={tweet.hash}
+            username={tweet.username ?? undefined}
+            myTid={myTid}
           />
         );
       })}

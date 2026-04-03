@@ -114,7 +114,7 @@ export default function Home() {
       <div className="min-w-0 flex-1">
         <div className="rounded-xl border border-gray-800 bg-gray-900">
           <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
-          <Feed refreshKey={refreshKey} />
+          <Feed myTid={tid} refreshKey={refreshKey} />
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
 
-export const SOLANA_RPC_URL = "https://api.devnet.solana.com";
+export const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
 
-export const TWEET_SERVER_URL = "http://localhost:3000";
-export const INDEXER_URL = "http://localhost:3001";
+export const TWEET_SERVER_URL = process.env.NEXT_PUBLIC_TWEET_SERVER_URL || "http://localhost:3000";
+export const INDEXER_URL = process.env.NEXT_PUBLIC_INDEXER_URL || "http://localhost:3001";
 
 export const PROGRAM_IDS = {
   tidRegistry: new PublicKey("4BSmJmRGQWKgioP9DG2bUuRS9U3V6soRauU7Nv6yGvHD"),
