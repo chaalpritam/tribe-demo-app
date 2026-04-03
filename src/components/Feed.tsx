@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import TweetCard from "./TweetCard";
 import { fetchGlobalFeed, fetchFeed, fetchTweets } from "@/lib/api";
+import { onFeedUpdate } from "@/lib/ws";
 
 interface Tweet {
   hash?: string;
@@ -49,10 +50,18 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
     loadTweets();
   }, [loadTweets, refreshKey]);
 
-  // Auto-refresh every 15 seconds
+  // Real-time updates via WebSocket, fallback to 30s polling
   useEffect(() => {
-    const interval = setInterval(loadTweets, 15000);
-    return () => clearInterval(interval);
+    const unsub = onFeedUpdate((event) => {
+      if (event === "new_message") {
+        loadTweets();
+      }
+    });
+    const interval = setInterval(loadTweets, 30000);
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
   }, [loadTweets]);
 
   if (loading && tweets.length === 0) {
