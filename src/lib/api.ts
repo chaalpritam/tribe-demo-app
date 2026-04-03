@@ -41,6 +41,12 @@ export async function fetchGlobalFeed() {
   return res.json();
 }
 
+export async function fetchUsers() {
+  const res = await fetch(`${INDEXER_URL}/v1/users?limit=50`);
+  if (!res.ok) throw new Error(`Failed to fetch users: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchFollowers(tid: string) {
   const res = await fetch(`${INDEXER_URL}/v1/followers/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch followers: ${res.statusText}`);

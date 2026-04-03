@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import LikeButton from "./LikeButton";
 
 interface TweetCardProps {
@@ -27,12 +28,20 @@ export default function TweetCard({
   return (
     <div className="border-b border-gray-800 px-4 py-4 transition-colors hover:bg-gray-900/50">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-600/20 text-sm font-semibold text-purple-400">
+        <Link
+          href={`/profile?tid=${tid}`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-600/20 text-sm font-semibold text-purple-400 transition-colors hover:bg-purple-600/30"
+        >
           {initial}
-        </div>
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-white">{displayName}</span>
+            <Link
+              href={`/profile?tid=${tid}`}
+              className="font-semibold text-white hover:underline"
+            >
+              {displayName}
+            </Link>
             {username && (
               <span className="text-sm text-gray-500">#{tid}</span>
             )}
@@ -46,16 +55,9 @@ export default function TweetCard({
           </div>
           <p className="mt-1 whitespace-pre-wrap text-gray-200">{text}</p>
 
-          {/* Actions */}
           {hash && (
             <div className="mt-2 flex items-center gap-6">
-              <LikeButton
-                tweetHash={hash}
-                tid={myTid ?? tid}
-              />
-              <span className="text-xs text-gray-600 hover:text-gray-400" title={hash}>
-                {hash.slice(0, 12)}...
-              </span>
+              <LikeButton tweetHash={hash} tid={myTid ?? tid} />
             </div>
           )}
         </div>
