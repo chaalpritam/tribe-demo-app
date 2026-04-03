@@ -55,6 +55,12 @@ export default function Navbar() {
             Channels
           </Link>
           <NotificationBadge />
+          <Link
+            href="/settings"
+            className="text-sm text-gray-400 transition-colors hover:text-white"
+          >
+            Settings
+          </Link>
         </div>
       </div>
 

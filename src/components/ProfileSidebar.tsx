@@ -16,6 +16,9 @@ export default function ProfileSidebar({
 }: ProfileSidebarProps) {
   const { publicKey, signMessage } = useWallet();
   const [username, setUsername] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [bio, setBio] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [followingList, setFollowingList] = useState<
@@ -30,6 +33,9 @@ export default function ProfileSidebar({
       try {
         const user = await fetchUser(tid);
         setUsername(user?.username ?? null);
+        setDisplayName(user?.display_name ?? null);
+        setBio(user?.bio ?? null);
+        setAvatarUrl(user?.avatar_url ?? null);
         setFollowersCount(
           Number(user?.followers_count ?? user?.follower_count ?? 0)
         );
@@ -80,18 +86,22 @@ export default function ProfileSidebar({
     }
   }, [publicKey, signMessage, tid, followInput]);
 
-  const displayName = username ? `${username}.tribe` : `TID #${tid}`;
+  const nameDisplay = displayName ?? (username ? `${username}.tribe` : `TID #${tid}`);
 
   return (
     <div className="space-y-4">
       {/* Profile card */}
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-lg font-bold text-white">
-            {username ? username[0].toUpperCase() : tid}
-          </div>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-lg font-bold text-white">
+              {username ? username[0].toUpperCase() : tid}
+            </div>
+          )}
           <div>
-            <p className="font-semibold text-white">{displayName}</p>
+            <p className="font-semibold text-white">{nameDisplay}</p>
             <p className="text-sm text-gray-400" title={walletAddress}>
               {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
             </p>
@@ -111,6 +121,10 @@ export default function ProfileSidebar({
           </div>
         </div>
       </div>
+
+      {bio && (
+        <p className="mt-3 text-sm text-gray-400">{bio}</p>
+      )}
 
       {/* Follow someone */}
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
