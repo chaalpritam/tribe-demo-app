@@ -41,6 +41,18 @@ export async function fetchGlobalFeed() {
   return res.json();
 }
 
+export async function fetchChannels() {
+  const res = await fetch(`${TWEET_SERVER_URL}/v1/channels`);
+  if (!res.ok) throw new Error(`Failed to fetch channels: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchChannelFeed(channelId: string) {
+  const res = await fetch(`${TWEET_SERVER_URL}/v1/channel/${encodeURIComponent(channelId)}`);
+  if (!res.ok) throw new Error(`Failed to fetch channel: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await fetch(`${TWEET_SERVER_URL}/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);

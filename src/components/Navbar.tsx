@@ -44,6 +44,12 @@ export default function Navbar() {
           >
             Explore
           </Link>
+          <Link
+            href="/channels"
+            className="text-sm text-gray-400 transition-colors hover:text-white"
+          >
+            Channels
+          </Link>
         </div>
       </div>
 

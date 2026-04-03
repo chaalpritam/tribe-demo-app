@@ -9,6 +9,7 @@ const MAX_CHARS = 320;
 interface TweetComposerProps {
   tid: number;
   parentHash?: string;
+  channelId?: string;
   placeholder?: string;
   compact?: boolean;
   onTweetPublished?: () => void;
@@ -17,6 +18,7 @@ interface TweetComposerProps {
 export default function TweetComposer({
   tid,
   parentHash,
+  channelId,
   placeholder,
   compact = false,
   onTweetPublished,
@@ -44,7 +46,7 @@ export default function TweetComposer({
         c.charCodeAt(0)
       );
 
-      await signAndPublishTweet(tid, text.trim(), secretKey, undefined, parentHash);
+      await signAndPublishTweet(tid, text.trim(), secretKey, undefined, parentHash, channelId);
       setText("");
       onTweetPublished?.();
     } catch (err) {

@@ -41,7 +41,8 @@ export async function signAndPublishTweet(
   text: string,
   signingKeySecret: Uint8Array,
   tweetServerUrl: string = TWEET_SERVER_URL,
-  parentHash?: string
+  parentHash?: string,
+  channelId?: string
 ): Promise<{ hash: string }> {
   const timestamp = Math.floor(Date.now() / 1000);
 
@@ -51,6 +52,7 @@ export async function signAndPublishTweet(
     embeds: [] as string[],
   };
   if (parentHash) body.parent_hash = parentHash;
+  if (channelId) body.channel_id = channelId;
 
   const data = {
     type: 1, // TWEET_ADD
