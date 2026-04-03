@@ -124,6 +124,43 @@ export async function fetchFollowers(tid: string) {
   return res.json();
 }
 
+export async function registerDmKey(tid: string, x25519Pubkey: string) {
+  await fetch(`${INDEXER_URL}/v1/dm/register-key`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tid, x25519Pubkey }),
+  });
+}
+
+export async function getDmKey(tid: string): Promise<string | null> {
+  const res = await fetch(`${INDEXER_URL}/v1/dm/key/${tid}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.x25519Pubkey ?? null;
+}
+
+export async function sendDm(senderTid: string, recipientTid: string, encryptedText: string, nonce: string) {
+  const res = await fetch(`${INDEXER_URL}/v1/dm/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ senderTid, recipientTid, encryptedText, nonce }),
+  });
+  if (!res.ok) throw new Error("Failed to send DM");
+  return res.json();
+}
+
+export async function fetchConversations(tid: string) {
+  const res = await fetch(`${INDEXER_URL}/v1/dm/conversations/${tid}`);
+  if (!res.ok) return { conversations: [] };
+  return res.json();
+}
+
+export async function fetchDmMessages(conversationId: string) {
+  const res = await fetch(`${INDEXER_URL}/v1/dm/messages/${conversationId}`);
+  if (!res.ok) return { messages: [] };
+  return res.json();
+}
+
 export async function fetchFollowing(tid: string) {
   const res = await fetch(`${INDEXER_URL}/v1/following/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch following: ${res.statusText}`);

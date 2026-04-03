@@ -55,6 +55,12 @@ export default function Navbar() {
             Channels
           </Link>
           <Link
+            href="/messages"
+            className="text-sm text-gray-400 transition-colors hover:text-white"
+          >
+            Messages
+          </Link>
+          <Link
             href="/bookmarks"
             className="text-sm text-gray-400 transition-colors hover:text-white"
           >
