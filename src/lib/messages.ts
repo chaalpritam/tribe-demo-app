@@ -42,14 +42,15 @@ export async function signAndPublishTweet(
   signingKeySecret: Uint8Array,
   tweetServerUrl: string = TWEET_SERVER_URL,
   parentHash?: string,
-  channelId?: string
+  channelId?: string,
+  embeds?: string[]
 ): Promise<{ hash: string }> {
   const timestamp = Math.floor(Date.now() / 1000);
 
   const body: Record<string, unknown> = {
     text,
     mentions: [] as number[],
-    embeds: [] as string[],
+    embeds: embeds ?? ([] as string[]),
   };
   if (parentHash) body.parent_hash = parentHash;
   if (channelId) body.channel_id = channelId;

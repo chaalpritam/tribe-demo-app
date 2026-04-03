@@ -11,6 +11,7 @@ interface TweetCardProps {
   username?: string;
   myTid?: number;
   replyCount?: number;
+  embeds?: string[];
 }
 
 export default function TweetCard({
@@ -21,6 +22,7 @@ export default function TweetCard({
   username,
   myTid,
   replyCount,
+  embeds,
 }: TweetCardProps) {
   const date = new Date(timestamp * 1000);
   const timeAgo = getTimeAgo(date);
@@ -56,6 +58,22 @@ export default function TweetCard({
             </span>
           </div>
           <p className="mt-1 whitespace-pre-wrap text-gray-200">{text}</p>
+
+          {/* Embedded images */}
+          {embeds && embeds.length > 0 && (
+            <div className={`mt-2 grid gap-1 ${embeds.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {embeds.filter(e => e.includes("/media/")).map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt=""
+                  className="w-full rounded-lg object-cover"
+                  style={{ maxHeight: embeds.length === 1 ? "400px" : "200px" }}
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          )}
 
           {hash && (
             <div className="mt-2 flex items-center gap-5">

@@ -41,6 +41,24 @@ export async function fetchGlobalFeed() {
   return res.json();
 }
 
+export async function uploadMedia(file: File): Promise<{ hash: string; url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${TWEET_SERVER_URL}/v1/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Upload failed: ${res.status} ${err}`);
+  }
+  return res.json();
+}
+
+export function getMediaUrl(hash: string): string {
+  return `${TWEET_SERVER_URL}/v1/media/${hash}`;
+}
+
 export async function searchTweets(query: string) {
   const res = await fetch(`${TWEET_SERVER_URL}/v1/search?q=${encodeURIComponent(query)}&limit=30`);
   if (!res.ok) throw new Error(`Search failed: ${res.statusText}`);
