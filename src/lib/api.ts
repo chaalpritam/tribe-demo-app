@@ -41,6 +41,12 @@ export async function fetchGlobalFeed() {
   return res.json();
 }
 
+export async function fetchReplies(hash: string) {
+  const res = await fetch(`${TWEET_SERVER_URL}/v1/replies?hash=${encodeURIComponent(hash)}`);
+  if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchUsers() {
   const res = await fetch(`${INDEXER_URL}/v1/users?limit=50`);
   if (!res.ok) throw new Error(`Failed to fetch users: ${res.statusText}`);

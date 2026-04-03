@@ -10,6 +10,7 @@ interface Tweet {
   text?: string;
   timestamp?: string | number;
   username?: string | null;
+  reply_count?: number;
 }
 
 interface FeedProps {
@@ -103,6 +104,7 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
             hash={tweet.hash}
             username={tweet.username ?? undefined}
             myTid={myTid}
+            replyCount={tweet.reply_count}
           />
         );
       })}

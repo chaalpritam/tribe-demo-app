@@ -40,20 +40,24 @@ export async function signAndPublishTweet(
   tid: number,
   text: string,
   signingKeySecret: Uint8Array,
-  tweetServerUrl: string = TWEET_SERVER_URL
+  tweetServerUrl: string = TWEET_SERVER_URL,
+  parentHash?: string
 ): Promise<{ hash: string }> {
   const timestamp = Math.floor(Date.now() / 1000);
+
+  const body: Record<string, unknown> = {
+    text,
+    mentions: [] as number[],
+    embeds: [] as string[],
+  };
+  if (parentHash) body.parent_hash = parentHash;
 
   const data = {
     type: 1, // TWEET_ADD
     tid,
     timestamp,
     network: 2, // DEVNET
-    body: {
-      text,
-      mentions: [] as number[],
-      embeds: [] as string[],
-    },
+    body,
   };
 
   // Deterministic JSON → UTF-8 bytes → blake3 hash
