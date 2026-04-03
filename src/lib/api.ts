@@ -112,6 +112,12 @@ export async function markNotificationsRead(tid: string, ids?: number[]) {
   });
 }
 
+export async function fetchBookmarks(tid: string) {
+  const res = await fetch(`${INDEXER_URL}/v1/bookmarks/${tid}`);
+  if (!res.ok) throw new Error(`Failed to fetch bookmarks: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchFollowers(tid: string) {
   const res = await fetch(`${INDEXER_URL}/v1/followers/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch followers: ${res.statusText}`);

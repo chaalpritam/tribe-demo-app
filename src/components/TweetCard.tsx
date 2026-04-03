@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import LikeButton from "./LikeButton";
+import BookmarkButton from "./BookmarkButton";
 
 interface TweetCardProps {
   text: string;
@@ -92,6 +93,9 @@ export default function TweetCard({
 
               {/* Like button */}
               <LikeButton tweetHash={hash} tid={myTid ?? tid} />
+
+              {/* Bookmark button */}
+              <BookmarkButton tweetHash={hash} />
             </div>
           )}
         </div>
