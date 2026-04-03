@@ -89,6 +89,29 @@ export async function fetchUsers() {
   return res.json();
 }
 
+export async function fetchNotifications(tid: string, unreadOnly = false) {
+  const params = new URLSearchParams({ limit: "20" });
+  if (unreadOnly) params.set("unread_only", "true");
+  const res = await fetch(`${INDEXER_URL}/v1/notifications/${tid}?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch notifications: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchUnreadCount(tid: string): Promise<number> {
+  const res = await fetch(`${INDEXER_URL}/v1/notifications/${tid}/count`);
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.count ?? 0;
+}
+
+export async function markNotificationsRead(tid: string, ids?: number[]) {
+  await fetch(`${INDEXER_URL}/v1/notifications/${tid}/read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+}
+
 export async function fetchFollowers(tid: string) {
   const res = await fetch(`${INDEXER_URL}/v1/followers/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch followers: ${res.statusText}`);

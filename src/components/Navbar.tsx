@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { fetchUnreadCount } from "@/lib/api";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 const WalletButton = dynamic(
   async () => {
@@ -52,6 +54,7 @@ export default function Navbar() {
           >
             Channels
           </Link>
+          <NotificationBadge />
         </div>
       </div>
 
@@ -68,6 +71,35 @@ export default function Navbar() {
         }}
       />
     </nav>
+  );
+}
+
+function NotificationBadge() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const tid = localStorage.getItem(STORAGE_KEYS.tid);
+    if (!tid) return;
+
+    fetchUnreadCount(tid).then(setCount).catch(() => {});
+    const interval = setInterval(() => {
+      fetchUnreadCount(tid).then(setCount).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Link
+      href="/notifications"
+      className="relative text-sm text-gray-400 transition-colors hover:text-white"
+    >
+      Notifications
+      {count > 0 && (
+        <span className="absolute -right-3 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] text-white">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </Link>
   );
 }
 
