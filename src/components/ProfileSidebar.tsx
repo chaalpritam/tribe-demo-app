@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useConnection } from "@solana/wallet-adapter-react";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { AnchorProvider } from "@coral-xyz/anchor";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchUser, fetchFollowing } from "@/lib/api";
-import { follow, initSocialProfile, hasSocialProfile } from "@/lib/tribe";
+import { erFollow } from "@/lib/er-client";
 
 interface ProfileSidebarProps {
   tid: string;
@@ -16,8 +14,7 @@ export default function ProfileSidebar({
   tid,
   walletAddress,
 }: ProfileSidebarProps) {
-  const { connection } = useConnection();
-  const wallet = useAnchorWallet();
+  const { publicKey, signMessage } = useWallet();
   const [username, setUsername] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -52,7 +49,7 @@ export default function ProfileSidebar({
   }, [tid]);
 
   const handleFollow = useCallback(async () => {
-    if (!wallet || !followInput.trim()) return;
+    if (!publicKey || !signMessage || !followInput.trim()) return;
     const targetTid = parseInt(followInput.trim(), 10);
     if (isNaN(targetTid) || targetTid <= 0) {
       setFollowError("Enter a valid TID number");
@@ -66,16 +63,8 @@ export default function ProfileSidebar({
     setFollowLoading(true);
     setFollowError(null);
     try {
-      const provider = new AnchorProvider(connection, wallet, {
-        commitment: "confirmed",
-      });
-
       const myTid = parseInt(tid, 10);
-      if (!(await hasSocialProfile(connection, myTid))) {
-        await initSocialProfile(provider, myTid);
-      }
-
-      await follow(provider, myTid, targetTid);
+      await erFollow(myTid, targetTid, publicKey.toBase58(), signMessage);
       setFollowInput("");
       setFollowingCount((c) => c + 1);
       setFollowingList((list) => [
@@ -89,7 +78,7 @@ export default function ProfileSidebar({
     } finally {
       setFollowLoading(false);
     }
-  }, [wallet, connection, tid, followInput]);
+  }, [publicKey, signMessage, tid, followInput]);
 
   const displayName = username ? `${username}.tribe` : `TID #${tid}`;
 

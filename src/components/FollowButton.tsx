@@ -1,51 +1,49 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useConnection } from "@solana/wallet-adapter-react";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import { follow, unfollow, initSocialProfile, hasSocialProfile } from "@/lib/tribe";
+import { useState, useEffect, useCallback } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { erFollow, erUnfollow, erGetLink } from "@/lib/er-client";
 
 interface FollowButtonProps {
   myTid: number;
   targetTid: number;
-  isFollowing?: boolean;
   onToggle?: (following: boolean) => void;
 }
 
 export default function FollowButton({
   myTid,
   targetTid,
-  isFollowing: initialFollowing = false,
   onToggle,
 }: FollowButtonProps) {
-  const { connection } = useConnection();
-  const wallet = useAnchorWallet();
-  const [following, setFollowing] = useState(initialFollowing);
+  const { publicKey, signMessage } = useWallet();
+  const [following, setFollowing] = useState(false);
+  const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  // Check current follow status on mount
+  useEffect(() => {
+    if (myTid === targetTid) return;
+    erGetLink(myTid, targetTid).then((data) => {
+      setFollowing(data.exists);
+      setPending(data.status === "pending_follow");
+      setChecked(true);
+    }).catch(() => setChecked(true));
+  }, [myTid, targetTid]);
 
   const handleToggle = useCallback(async () => {
-    if (!wallet || myTid === targetTid) return;
+    if (!publicKey || !signMessage || myTid === targetTid) return;
     setLoading(true);
     try {
-      const provider = new AnchorProvider(connection, wallet, {
-        commitment: "confirmed",
-      });
-
       if (following) {
-        await unfollow(provider, myTid, targetTid);
+        await erUnfollow(myTid, targetTid, publicKey.toBase58(), signMessage);
         setFollowing(false);
+        setPending(false);
         onToggle?.(false);
       } else {
-        // Ensure both profiles exist before following
-        if (!(await hasSocialProfile(connection, myTid))) {
-          await initSocialProfile(provider, myTid);
-        }
-        if (!(await hasSocialProfile(connection, targetTid))) {
-          // Can't init someone else's profile — skip if not initialized
-        }
-        await follow(provider, myTid, targetTid);
+        await erFollow(myTid, targetTid, publicKey.toBase58(), signMessage);
         setFollowing(true);
+        setPending(true);
         onToggle?.(true);
       }
     } catch (err) {
@@ -53,9 +51,9 @@ export default function FollowButton({
     } finally {
       setLoading(false);
     }
-  }, [wallet, connection, myTid, targetTid, following, onToggle]);
+  }, [publicKey, signMessage, myTid, targetTid, following, onToggle]);
 
-  if (myTid === targetTid) return null;
+  if (myTid === targetTid || !checked) return null;
 
   return (
     <button
@@ -67,7 +65,13 @@ export default function FollowButton({
           : "bg-white text-black hover:bg-gray-200"
       }`}
     >
-      {loading ? "..." : following ? "Following" : "Follow"}
+      {loading
+        ? "..."
+        : following
+        ? pending
+          ? "Pending"
+          : "Following"
+        : "Follow"}
     </button>
   );
 }
