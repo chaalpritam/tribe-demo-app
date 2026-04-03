@@ -3,6 +3,7 @@
 import Link from "next/link";
 import LikeButton from "./LikeButton";
 import BookmarkButton from "./BookmarkButton";
+import RetweetButton from "./RetweetButton";
 
 interface TweetCardProps {
   text: string;
@@ -90,6 +91,9 @@ export default function TweetCard({
                   <span>{replyCount}</span>
                 )}
               </Link>
+
+              {/* Retweet button */}
+              <RetweetButton tweetHash={hash} />
 
               {/* Like button */}
               <LikeButton tweetHash={hash} tid={myTid ?? tid} />
