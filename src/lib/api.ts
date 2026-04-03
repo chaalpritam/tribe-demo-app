@@ -41,6 +41,12 @@ export async function fetchGlobalFeed() {
   return res.json();
 }
 
+export async function searchTweets(query: string) {
+  const res = await fetch(`${TWEET_SERVER_URL}/v1/search?q=${encodeURIComponent(query)}&limit=30`);
+  if (!res.ok) throw new Error(`Search failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function fetchChannels() {
   const res = await fetch(`${TWEET_SERVER_URL}/v1/channels`);
   if (!res.ok) throw new Error(`Failed to fetch channels: ${res.statusText}`);

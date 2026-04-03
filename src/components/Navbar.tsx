@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -53,6 +55,10 @@ export default function Navbar() {
         </div>
       </div>
 
+      <div className="hidden items-center gap-4 md:flex">
+        <SearchBar />
+      </div>
+
       <WalletButton
         style={{
           backgroundColor: "#7c3aed",
@@ -62,5 +68,29 @@ export default function Navbar() {
         }}
       />
     </nav>
+  );
+}
+
+function SearchBar() {
+  const [query, setQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim().length >= 2) {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSearch}>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search tweets..."
+        className="w-48 rounded-full border border-gray-700 bg-gray-800 px-4 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600 focus:w-64 transition-all"
+      />
+    </form>
   );
 }
