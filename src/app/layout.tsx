@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tribe",
-  description: "Decentralized social protocol on Solana",
+  title: "Tribe - Decentralized Social Protocol",
+  description:
+    "Own your identity, your data, and your social graph. Built on Solana.",
 };
 
 export default function RootLayout({

@@ -14,6 +14,7 @@ export default function Home() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const [tid, setTid] = useState<number | null>(null);
+  const [hasAppKey, setHasAppKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -25,6 +26,7 @@ export default function Home() {
       const storedTid = localStorage.getItem(STORAGE_KEYS.tid);
       if (storedTid) {
         setTid(parseInt(storedTid, 10));
+        setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
         setLoading(false);
         return;
       }
@@ -34,6 +36,7 @@ export default function Home() {
       if (onChainTid !== null) {
         setTid(onChainTid);
         localStorage.setItem(STORAGE_KEYS.tid, onChainTid.toString());
+        setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
       }
     } catch {
       // TID not found
@@ -47,6 +50,7 @@ export default function Home() {
       checkTid();
     } else {
       setTid(null);
+      setHasAppKey(false);
     }
   }, [connected, publicKey, checkTid]);
 
@@ -56,13 +60,14 @@ export default function Home() {
 
   const handleRegistered = useCallback((newTid: number) => {
     setTid(newTid);
+    setHasAppKey(true);
   }, []);
 
   // Not connected - hero section
   if (!connected) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center px-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-purple-600 text-3xl font-bold text-white">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-purple-600 text-3xl font-bold text-white shadow-lg shadow-purple-600/30">
           T
         </div>
         <h1 className="mt-6 text-4xl font-bold text-white">
@@ -72,7 +77,29 @@ export default function Home() {
           A decentralized social protocol built on Solana. Own your identity,
           your data, and your social graph.
         </p>
-        <p className="mt-8 text-gray-500">
+
+        <div className="mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
+            <div className="text-2xl font-bold text-purple-400">On-Chain</div>
+            <p className="mt-1 text-sm text-gray-400">
+              Identity & social graph stored on Solana
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
+            <div className="text-2xl font-bold text-purple-400">Self-Owned</div>
+            <p className="mt-1 text-sm text-gray-400">
+              Your keys, your data, your network
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
+            <div className="text-2xl font-bold text-purple-400">Fast</div>
+            <p className="mt-1 text-sm text-gray-400">
+              Ephemeral rollups for instant interactions
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-10 text-gray-500">
           Connect your wallet to get started
         </p>
       </div>
@@ -88,11 +115,24 @@ export default function Home() {
     );
   }
 
-  // No TID - registration flow
+  // No TID - registration flow (start from beginning)
   if (tid === null) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
         <RegisterIdentity onRegistered={handleRegistered} />
+      </div>
+    );
+  }
+
+  // Has TID but no app key - resume registration at app key step
+  if (!hasAppKey) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
+        <RegisterIdentity
+          onRegistered={handleRegistered}
+          initialStep="appkey"
+          existingTid={tid}
+        />
       </div>
     );
   }

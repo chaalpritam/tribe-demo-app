@@ -14,21 +14,25 @@ import {
 } from "@/lib/tribe";
 import { STORAGE_KEYS } from "@/lib/constants";
 
-type Step = "register" | "username" | "appkey" | "done";
+export type Step = "register" | "username" | "appkey" | "done";
 
 interface RegisterIdentityProps {
   onRegistered: (tid: number) => void;
+  initialStep?: Step;
+  existingTid?: number | null;
 }
 
 export default function RegisterIdentity({
   onRegistered,
+  initialStep = "register",
+  existingTid = null,
 }: RegisterIdentityProps) {
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
-  const [step, setStep] = useState<Step>("register");
+  const [step, setStep] = useState<Step>(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tid, setTid] = useState<number | null>(null);
+  const [tid, setTid] = useState<number | null>(existingTid);
   const [usernameInput, setUsernameInput] = useState("");
 
   function getProvider() {
