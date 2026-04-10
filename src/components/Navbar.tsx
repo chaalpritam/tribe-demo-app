@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { fetchUnreadCount } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { onFeedUpdate, subscribeTid } from "@/lib/ws";
 
 const WalletButton = dynamic(
   async () => {
@@ -99,11 +100,26 @@ function NotificationBadge() {
     const tid = localStorage.getItem(STORAGE_KEYS.tid);
     if (!tid) return;
 
+    // Initial fetch
     fetchUnreadCount(tid).then(setCount).catch(() => {});
+
+    // Subscribe to real-time notifications via WebSocket
+    subscribeTid(tid);
+    const unsub = onFeedUpdate((event) => {
+      if (event === "notification") {
+        setCount((c) => c + 1);
+      }
+    });
+
+    // Fallback poll every 60s (in case WS disconnects)
     const interval = setInterval(() => {
       fetchUnreadCount(tid).then(setCount).catch(() => {});
-    }, 30000);
-    return () => clearInterval(interval);
+    }, 60000);
+
+    return () => {
+      unsub();
+      clearInterval(interval);
+    };
   }, []);
 
   return (

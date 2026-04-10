@@ -50,14 +50,14 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
     loadTweets();
   }, [loadTweets, refreshKey]);
 
-  // Real-time updates via WebSocket, fallback to 30s polling
+  // Real-time updates via WebSocket, fallback to 60s polling
   useEffect(() => {
     const unsub = onFeedUpdate((event) => {
-      if (event === "new_message") {
+      if (event === "new_message" || event === "new_tweet") {
         loadTweets();
       }
     });
-    const interval = setInterval(loadTweets, 30000);
+    const interval = setInterval(loadTweets, 60000);
     return () => {
       unsub();
       clearInterval(interval);
