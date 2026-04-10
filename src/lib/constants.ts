@@ -16,4 +16,5 @@ export const PROGRAM_IDS = {
 export const STORAGE_KEYS = {
   appKeySecret: "tribe_app_key_secret",
   tid: "tribe_tid",
+  tidWallet: "tribe_tid_wallet",
 };

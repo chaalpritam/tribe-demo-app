@@ -22,13 +22,23 @@ export default function Home() {
     if (!publicKey) return;
     setLoading(true);
     try {
-      // Check localStorage first
+      const walletKey = publicKey.toBase58();
       const storedTid = localStorage.getItem(STORAGE_KEYS.tid);
-      if (storedTid) {
+      const storedWallet = localStorage.getItem(STORAGE_KEYS.tidWallet);
+
+      // Use cached TID only if it belongs to the current wallet
+      if (storedTid && storedWallet === walletKey) {
         setTid(parseInt(storedTid, 10));
         setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
         setLoading(false);
         return;
+      }
+
+      // Clear stale cache from a different wallet
+      if (storedTid && storedWallet !== walletKey) {
+        localStorage.removeItem(STORAGE_KEYS.tid);
+        localStorage.removeItem(STORAGE_KEYS.appKeySecret);
+        localStorage.removeItem(STORAGE_KEYS.tidWallet);
       }
 
       // Check on-chain
@@ -36,6 +46,7 @@ export default function Home() {
       if (onChainTid !== null) {
         setTid(onChainTid);
         localStorage.setItem(STORAGE_KEYS.tid, onChainTid.toString());
+        localStorage.setItem(STORAGE_KEYS.tidWallet, walletKey);
         setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
       }
     } catch {
