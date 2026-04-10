@@ -68,7 +68,7 @@ export default function TweetCard({
                 <img
                   key={i}
                   src={url}
-                  alt=""
+                  alt={`Attached image ${i + 1}`}
                   className="w-full rounded-lg object-cover"
                   style={{ maxHeight: embeds.length === 1 ? "400px" : "200px" }}
                   loading="lazy"

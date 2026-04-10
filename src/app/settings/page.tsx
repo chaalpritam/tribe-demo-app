@@ -130,10 +130,11 @@ export default function SettingsPage() {
 
         {/* Display Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-300">
+          <label htmlFor="display-name" className="block text-sm font-medium text-gray-300">
             Display Name
           </label>
           <input
+            id="display-name"
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
@@ -145,10 +146,11 @@ export default function SettingsPage() {
 
         {/* Bio */}
         <div>
-          <label className="block text-sm font-medium text-gray-300">
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-300">
             Bio
           </label>
           <textarea
+            id="bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Tell people about yourself"

@@ -94,7 +94,7 @@ export default function ProfileSidebar({
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
         <div className="flex items-center gap-3">
           {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+            <img src={avatarUrl} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-lg font-bold text-white">
               {username ? username[0].toUpperCase() : tid}
