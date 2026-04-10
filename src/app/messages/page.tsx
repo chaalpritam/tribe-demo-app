@@ -120,8 +120,8 @@ function MessagesPage() {
         const data = await fetchDmMessages(convId);
         setMessages(data?.messages ?? []);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to send DM:", err);
     } finally {
       setSending(false);
     }
@@ -166,8 +166,9 @@ function MessagesPage() {
                 const isMe = msg.sender_tid === myTid;
                 let text = "[encrypted]";
                 if (otherPubkey) {
-                  const senderKey = isMe ? getDmPublicKey() : otherPubkey;
-                  const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, senderKey);
+                  // NaCl box decryption always needs the OTHER party's public key
+                  // regardless of who sent the message
+                  const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, otherPubkey);
                   if (decrypted) text = decrypted;
                 }
                 return (

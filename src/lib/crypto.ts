@@ -16,10 +16,10 @@ function fromBase64(b64: string): Uint8Array {
 
 /**
  * Get or create the user's x25519 keypair for DMs.
- * Stored in localStorage.
+ * Stored in sessionStorage.
  */
 export function getDmKeypair(): nacl.BoxKeyPair {
-  const stored = localStorage.getItem(DM_KEY_STORAGE);
+  const stored = sessionStorage.getItem(DM_KEY_STORAGE);
   if (stored) {
     const parsed = JSON.parse(stored);
     return {
@@ -29,7 +29,7 @@ export function getDmKeypair(): nacl.BoxKeyPair {
   }
 
   const keypair = nacl.box.keyPair();
-  localStorage.setItem(
+  sessionStorage.setItem(
     DM_KEY_STORAGE,
     JSON.stringify({
       publicKey: toBase64(keypair.publicKey),
