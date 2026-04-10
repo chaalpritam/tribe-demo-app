@@ -32,7 +32,8 @@ export default function BookmarkButton({ tweetHash }: BookmarkButtonProps) {
         setBookmarked(true);
       }
     } catch {
-      // ignore
+      // Revert optimistic state on failure
+      setBookmarked((prev) => !prev);
     } finally {
       setLoading(false);
     }

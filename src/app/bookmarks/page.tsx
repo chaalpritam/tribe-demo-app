@@ -20,6 +20,7 @@ export default function BookmarksPage() {
   const { connected } = useWallet();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<number | null>(null);
 
   useEffect(() => {
@@ -30,9 +31,10 @@ export default function BookmarksPage() {
   useEffect(() => {
     if (!myTid) return;
     setLoading(true);
+    setError(null);
     fetchBookmarks(String(myTid))
       .then((data) => setBookmarks(data?.bookmarks ?? []))
-      .catch(() => {})
+      .catch(() => setError("Failed to load bookmarks"))
       .finally(() => setLoading(false));
   }, [myTid]);
 
@@ -51,6 +53,16 @@ export default function BookmarksPage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <p className="text-gray-500">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-purple-400 hover:underline"
+          >
+            Retry
+          </button>
         </div>
       ) : bookmarks.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">No bookmarks yet</p>

@@ -46,6 +46,7 @@ function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -57,6 +58,7 @@ function ChannelsPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError(null);
       try {
         if (channelId) {
           const data = await fetchChannelFeed(channelId);
@@ -66,7 +68,7 @@ function ChannelsPage() {
           setChannels(data?.channels ?? []);
         }
       } catch {
-        // ignore
+        setError("Failed to load channel data");
       } finally {
         setLoading(false);
       }
@@ -112,6 +114,16 @@ function ChannelsPage() {
             <div className="flex justify-center py-8">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
             </div>
+          ) : error ? (
+            <div className="py-8 text-center">
+              <p className="text-gray-500">{error}</p>
+              <button
+                onClick={() => setRefreshKey((k) => k + 1)}
+                className="mt-2 text-sm text-purple-400 hover:underline"
+              >
+                Retry
+              </button>
+            </div>
           ) : tweets.length === 0 ? (
             <p className="py-8 text-center text-gray-500">
               No posts in this channel yet
@@ -152,6 +164,16 @@ function ChannelsPage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <p className="text-gray-500">{error}</p>
+          <button
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="mt-2 text-sm text-purple-400 hover:underline"
+          >
+            Retry
+          </button>
         </div>
       ) : channels.length === 0 ? (
         <div className="mt-8 text-center">

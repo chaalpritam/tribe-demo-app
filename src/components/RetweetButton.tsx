@@ -32,7 +32,8 @@ export default function RetweetButton({ tweetHash }: RetweetButtonProps) {
         setRetweeted(true);
       }
     } catch {
-      // ignore
+      // Revert optimistic state on failure
+      setRetweeted((prev) => !prev);
     } finally {
       setLoading(false);
     }

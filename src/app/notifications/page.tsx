@@ -35,6 +35,7 @@ export default function NotificationsPage() {
   const { connected } = useWallet();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,9 +46,10 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!myTid) return;
     setLoading(true);
+    setError(null);
     fetchNotifications(myTid)
       .then((data) => setNotifications(data?.notifications ?? []))
-      .catch(() => {})
+      .catch(() => setError("Failed to load notifications"))
       .finally(() => setLoading(false));
   }, [myTid]);
 
@@ -82,6 +84,16 @@ export default function NotificationsPage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <p className="text-gray-500">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-purple-400 hover:underline"
+          >
+            Retry
+          </button>
         </div>
       ) : notifications.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">No notifications yet</p>

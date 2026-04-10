@@ -28,13 +28,15 @@ export default function ExplorePage() {
     if (stored) setMyTid(parseInt(stored, 10));
   }, []);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       try {
         const data = await fetchUsers();
         setUsers(data?.users ?? []);
       } catch {
-        // ignore
+        setError("Failed to load users");
       } finally {
         setLoading(false);
       }
@@ -60,6 +62,16 @@ export default function ExplorePage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <p className="text-gray-500">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-purple-400 hover:underline"
+          >
+            Retry
+          </button>
         </div>
       ) : users.length === 0 ? (
         <div className="py-12 text-center text-gray-500">
