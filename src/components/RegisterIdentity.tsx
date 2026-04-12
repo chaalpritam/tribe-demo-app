@@ -51,6 +51,7 @@ export default function RegisterIdentity({
       const result = await registerTid(provider, wallet.publicKey);
       setTid(result.tid);
       localStorage.setItem(STORAGE_KEYS.tid, result.tid.toString());
+      // If tx is null, the wallet already had a TID — skip straight ahead
       setStep("username");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to register TID");
@@ -120,9 +121,9 @@ export default function RegisterIdentity({
     /^[a-z0-9_]+$/.test(usernameInput.toLowerCase());
 
   return (
-    <div className="mx-auto max-w-md rounded-xl border border-gray-800 bg-gray-900 p-6">
-      <h2 className="text-xl font-bold text-white">Set Up Your Identity</h2>
-      <p className="mt-2 text-sm text-gray-400">
+    <div className="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-bold text-gray-900">Set Up Your Identity</h2>
+      <p className="mt-2 text-sm text-gray-600">
         Register your Tribe ID to start posting and connecting with others.
       </p>
 
@@ -134,8 +135,8 @@ export default function RegisterIdentity({
             className={`h-1 flex-1 rounded-full ${
               i <=
               ["register", "username", "appkey"].indexOf(step)
-                ? "bg-purple-600"
-                : "bg-gray-700"
+                ? "bg-blue-500"
+                : "bg-gray-200"
             }`}
           />
         ))}
@@ -143,13 +144,13 @@ export default function RegisterIdentity({
 
       {step === "register" && (
         <div className="mt-6">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-700">
             Step 1 of 3: Register your Tribe ID (TID) on Solana.
           </p>
           <button
             onClick={handleRegisterTid}
             disabled={loading}
-            className="mt-4 w-full rounded-lg bg-purple-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Registering..." : "Register TID"}
           </button>
@@ -158,12 +159,12 @@ export default function RegisterIdentity({
 
       {step === "username" && (
         <div className="mt-6">
-          <div className="rounded-lg bg-green-900/30 px-3 py-2">
-            <p className="text-sm text-green-400">
+          <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+            <p className="text-sm text-green-700">
               TID #{tid} registered!
             </p>
           </div>
-          <p className="mt-4 text-sm text-gray-300">
+          <p className="mt-4 text-sm text-gray-700">
             Step 2 of 3: Choose a username (your .tribe handle).
           </p>
           <div className="mt-3 flex items-center gap-2">
@@ -173,25 +174,25 @@ export default function RegisterIdentity({
               onChange={(e) => setUsernameInput(e.target.value.toLowerCase())}
               placeholder="username"
               maxLength={20}
-              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 outline-none focus:border-purple-600"
+              className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
-            <span className="text-gray-400">.tribe</span>
+            <span className="text-gray-500">.tribe</span>
           </div>
           {usernameInput && !isValidUsername && (
-            <p className="mt-1 text-xs text-yellow-500">
+            <p className="mt-1 text-xs text-yellow-600">
               3-20 chars, lowercase letters, numbers, underscores only
             </p>
           )}
           <button
             onClick={handleRegisterUsername}
             disabled={loading || !isValidUsername}
-            className="mt-4 w-full rounded-lg bg-purple-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Registering..." : "Register Username"}
           </button>
           <button
             onClick={handleSkipUsername}
-            className="mt-2 w-full text-sm text-gray-500 hover:text-gray-300"
+            className="mt-2 w-full text-sm text-gray-500 hover:text-gray-700 hover:underline"
           >
             Skip for now
           </button>
@@ -200,13 +201,13 @@ export default function RegisterIdentity({
 
       {step === "appkey" && (
         <div className="mt-6">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-700">
             Step 3 of 3: Generate a signing key for posting tweets.
           </p>
           <button
             onClick={handleAddAppKey}
             disabled={loading}
-            className="mt-4 w-full rounded-lg bg-purple-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Setting up..." : "Generate Signing Key"}
           </button>
@@ -214,15 +215,15 @@ export default function RegisterIdentity({
       )}
 
       {step === "done" && (
-        <div className="mt-6 rounded-lg bg-green-900/30 px-3 py-2">
-          <p className="text-sm text-green-400">
+        <div className="mt-6 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+          <p className="text-sm text-green-700">
             All set! You can now post tweets and follow others.
           </p>
         </div>
       )}
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-900/30 px-3 py-2 text-sm text-red-400">
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
       )}

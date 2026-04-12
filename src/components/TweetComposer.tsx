@@ -104,9 +104,9 @@ export default function TweetComposer({
   }, [text, mediaHashes, isOverLimit, submitting, tid, parentHash, channelId, onTweetPublished]);
 
   return (
-    <div className={compact ? "p-3" : "border-b border-gray-800 p-4"}>
+    <div className={compact ? "p-3" : "border-b border-gray-200 p-4"}>
       <textarea
-        className="w-full resize-none rounded-lg bg-gray-900 p-3 text-white placeholder-gray-500 outline-none focus:ring-1 focus:ring-purple-600"
+        className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-colors"
         rows={compact ? 2 : 3}
         placeholder={placeholder ?? (parentHash ? "Post your reply..." : "What's happening?")}
         value={text}
@@ -148,11 +148,11 @@ export default function TweetComposer({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || mediaHashes.length >= 4}
-            className="text-gray-500 transition-colors hover:text-purple-400 disabled:opacity-50"
+            className="text-gray-500 transition-colors hover:text-blue-500 disabled:opacity-50"
             title="Add image"
           >
             {uploading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
             ) : (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
@@ -174,7 +174,7 @@ export default function TweetComposer({
         <button
           onClick={handleSubmit}
           disabled={(!text.trim() && mediaHashes.length === 0) || isOverLimit || submitting}
-          className="rounded-full bg-purple-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm"
         >
           {submitting ? "Posting..." : parentHash ? "Reply" : "Tweet"}
         </button>
