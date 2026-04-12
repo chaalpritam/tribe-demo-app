@@ -91,18 +91,18 @@ export default function ProfileSidebar({
   return (
     <div className="space-y-4">
       {/* Profile card */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center gap-3">
           {avatarUrl ? (
             <img src={avatarUrl} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-lg font-bold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white">
               {username ? username[0].toUpperCase() : tid}
             </div>
           )}
           <div>
-            <p className="font-semibold text-white">{nameDisplay}</p>
-            <p className="text-sm text-gray-400" title={walletAddress}>
+            <p className="font-semibold text-gray-900">{nameDisplay}</p>
+            <p className="text-sm text-gray-600" title={walletAddress}>
               {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
             </p>
           </div>
@@ -110,37 +110,37 @@ export default function ProfileSidebar({
 
         <div className="mt-4 flex gap-6">
           <div>
-            <p className="text-lg font-semibold text-white">{followingCount}</p>
-            <p className="text-sm text-gray-500">Following</p>
+            <p className="text-lg font-semibold text-gray-900">{followingCount}</p>
+            <p className="text-sm text-gray-600">Following</p>
           </div>
           <div>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-gray-900">
               {followersCount}
             </p>
-            <p className="text-sm text-gray-500">Followers</p>
+            <p className="text-sm text-gray-600">Followers</p>
           </div>
         </div>
       </div>
 
       {bio && (
-        <p className="mt-3 text-sm text-gray-400">{bio}</p>
+        <p className="mt-3 text-sm text-gray-600">{bio}</p>
       )}
 
       {/* Follow someone */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <p className="text-sm font-semibold text-white">Follow a user</p>
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <p className="text-sm font-semibold text-gray-900">Follow a user</p>
         <div className="mt-2 flex gap-2">
           <input
             type="text"
             value={followInput}
             onChange={(e) => setFollowInput(e.target.value)}
             placeholder="Enter TID"
-            className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600"
+            className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500"
           />
           <button
             onClick={handleFollow}
             disabled={followLoading || !followInput.trim()}
-            className="rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+            className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
             {followLoading ? "..." : "Follow"}
           </button>
@@ -152,20 +152,20 @@ export default function ProfileSidebar({
 
       {/* Following list */}
       {followingList.length > 0 && (
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-          <p className="text-sm font-semibold text-white">Following</p>
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-sm font-semibold text-gray-900">Following</p>
           <div className="mt-2 space-y-2">
             {followingList.slice(0, 10).map((f) => (
               <div
                 key={f.following_tid}
                 className="flex items-center gap-2 text-sm"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-600/20 text-xs text-purple-400">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs text-blue-600">
                   {f.username
                     ? f.username[0].toUpperCase()
                     : f.following_tid}
                 </div>
-                <span className="text-gray-300">
+                <span className="text-gray-700">
                   {f.username
                     ? `${f.username}.tribe`
                     : `TID #${f.following_tid}`}
