@@ -78,33 +78,33 @@ export default function Home() {
   if (!connected) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center px-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-purple-600 text-3xl font-bold text-white shadow-lg shadow-purple-600/30">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500 text-3xl font-bold text-white">
           T
         </div>
-        <h1 className="mt-6 text-4xl font-bold text-white">
+        <h1 className="mt-6 text-4xl font-bold text-gray-900">
           Welcome to Tribe
         </h1>
-        <p className="mt-3 max-w-md text-center text-lg text-gray-400">
+        <p className="mt-3 max-w-md text-center text-lg text-gray-600">
           A decentralized social protocol built on Solana. Own your identity,
           your data, and your social graph.
         </p>
 
         <div className="mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400">On-Chain</div>
-            <p className="mt-1 text-sm text-gray-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+            <div className="text-2xl font-bold text-blue-500">On-Chain</div>
+            <p className="mt-1 text-sm text-gray-600">
               Identity & social graph stored on Solana
             </p>
           </div>
-          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400">Self-Owned</div>
-            <p className="mt-1 text-sm text-gray-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+            <div className="text-2xl font-bold text-blue-500">Self-Owned</div>
+            <p className="mt-1 text-sm text-gray-600">
               Your keys, your data, your network
             </p>
           </div>
-          <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400">Fast</div>
-            <p className="mt-1 text-sm text-gray-400">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+            <div className="text-2xl font-bold text-blue-500">Fast</div>
+            <p className="mt-1 text-sm text-gray-600">
               Ephemeral rollups for instant interactions
             </p>
           </div>
@@ -121,7 +121,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function Home() {
 
       {/* Main content */}
       <div className="min-w-0 flex-1">
-        <div className="rounded-xl border border-gray-800 bg-gray-900">
+        <div className="rounded-xl border border-gray-200 bg-white">
           <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
           <Feed myTid={tid} refreshKey={refreshKey} />
         </div>
