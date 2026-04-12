@@ -138,7 +138,16 @@ export async function hasSocialProfile(
 export async function registerTid(
   provider: AnchorProvider,
   recoveryAddress: PublicKey
-): Promise<{ tx: string; tid: number }> {
+): Promise<{ tx: string | null; tid: number }> {
+  // Check if this wallet already has a TID — skip registration if so
+  const existingTid = await getTidByCustody(
+    provider.connection,
+    provider.wallet.publicKey
+  );
+  if (existingTid !== null) {
+    return { tx: null, tid: existingTid };
+  }
+
   const globalState = getGlobalStatePda();
   const info = await provider.connection.getAccountInfo(globalState);
   if (!info) throw new Error("Global state not initialized");
@@ -207,7 +216,11 @@ export async function registerUsername(
   provider: AnchorProvider,
   tid: number,
   username: string
-): Promise<string> {
+): Promise<string | null> {
+  // Skip if this TID already has a username registered
+  const alreadyHas = await hasUsername(provider.connection, tid);
+  if (alreadyHas) return null;
+
   const tidRecord = getTidRecordPda(tid);
   const usernameRecord = getUsernameRecordPda(username);
   const tidUsername = getTidUsernamePda(tid);
@@ -242,7 +255,11 @@ export async function registerUsername(
 export async function initSocialProfile(
   provider: AnchorProvider,
   tid: number
-): Promise<string> {
+): Promise<string | null> {
+  // Skip if social profile already exists
+  const alreadyHas = await hasSocialProfile(provider.connection, tid);
+  if (alreadyHas) return null;
+
   const tidRecord = getTidRecordPda(tid);
   const profile = getSocialProfilePda(tid);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing } from "@/lib/api";
@@ -134,12 +134,9 @@ function ProfilePage() {
               {initial}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">{displayName}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
               {user?.custody_address && (
-                <p className="text-sm text-gray-400">
-                  {user.custody_address.slice(0, 6)}...
-                  {user.custody_address.slice(-4)}
-                </p>
+                <WalletAddress address={user.custody_address} />
               )}
               {user?.registered_at && (
                 <p className="mt-1 text-xs text-gray-500">
@@ -270,6 +267,44 @@ function ProfilePage() {
         )}
       </div>
     </div>
+  );
+}
+
+function WalletAddress({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [address]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="mt-1 flex items-center gap-1.5 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900"
+      title="Copy wallet address"
+    >
+      <svg
+        className="h-3 w-3 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"
+        />
+      </svg>
+      <span className="font-mono">
+        {address.slice(0, 4)}...{address.slice(-4)}
+      </span>
+      {copied && (
+        <span className="text-green-600">Copied!</span>
+      )}
+    </button>
   );
 }
 
