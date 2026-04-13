@@ -2,8 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 
 export const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
 
-export const TWEET_SERVER_URL = process.env.NEXT_PUBLIC_TWEET_SERVER_URL || "http://localhost:3000";
-export const INDEXER_URL = process.env.NEXT_PUBLIC_INDEXER_URL || "http://localhost:3001";
+export const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || "http://localhost:4000";
 export const ER_SERVER_URL = process.env.NEXT_PUBLIC_ER_SERVER_URL || "http://localhost:3003";
 
 export const PROGRAM_IDS = {

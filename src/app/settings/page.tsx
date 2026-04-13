@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { STORAGE_KEYS, INDEXER_URL } from "@/lib/constants";
+import { STORAGE_KEYS, HUB_URL } from "@/lib/constants";
 import { fetchUser, uploadMedia, getMediaUrl } from "@/lib/api";
 
 export default function SettingsPage() {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch(`${INDEXER_URL}/v1/user/${myTid}/profile`, {
+      const res = await fetch(`${HUB_URL}/v1/user/${myTid}/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

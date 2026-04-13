@@ -1,4 +1,4 @@
-import { INDEXER_URL } from "./constants";
+import { HUB_URL } from "./constants";
 
 type MessageHandler = (event: string, data: unknown) => void;
 
@@ -8,8 +8,8 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let subscribedTid: string | null = null;
 
 function getWsUrl(): string {
-  // Convert http://localhost:3001 → ws://localhost:3001/v1/ws
-  return INDEXER_URL.replace(/^http/, "ws") + "/v1/ws";
+  // Convert http://localhost:4000 → ws://localhost:4000/v1/ws
+  return HUB_URL.replace(/^http/, "ws") + "/v1/ws";
 }
 
 function connect() {

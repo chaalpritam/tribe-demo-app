@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { INDEXER_URL, STORAGE_KEYS } from "@/lib/constants";
+import { HUB_URL, STORAGE_KEYS } from "@/lib/constants";
 
 interface RetweetButtonProps {
   tweetHash: string;
@@ -17,14 +17,14 @@ export default function RetweetButton({ tweetHash }: RetweetButtonProps) {
     setLoading(true);
     try {
       if (retweeted) {
-        await fetch(`${INDEXER_URL}/v1/retweet`, {
+        await fetch(`${HUB_URL}/v1/retweet`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tid, tweetHash }),
         });
         setRetweeted(false);
       } else {
-        await fetch(`${INDEXER_URL}/v1/retweet`, {
+        await fetch(`${HUB_URL}/v1/retweet`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tid, tweetHash }),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { INDEXER_URL, STORAGE_KEYS } from "@/lib/constants";
+import { HUB_URL, STORAGE_KEYS } from "@/lib/constants";
 
 interface BookmarkButtonProps {
   tweetHash: string;
@@ -17,14 +17,14 @@ export default function BookmarkButton({ tweetHash }: BookmarkButtonProps) {
     setLoading(true);
     try {
       if (bookmarked) {
-        await fetch(`${INDEXER_URL}/v1/bookmarks/${tid}`, {
+        await fetch(`${HUB_URL}/v1/bookmarks/${tid}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tweetHash }),
         });
         setBookmarked(false);
       } else {
-        await fetch(`${INDEXER_URL}/v1/bookmarks/${tid}`, {
+        await fetch(`${HUB_URL}/v1/bookmarks/${tid}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tweetHash }),
