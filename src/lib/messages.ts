@@ -1,5 +1,5 @@
 import nacl from "tweetnacl";
-import { HUB_URL } from "./constants";
+import { hubFetch } from "./failover";
 
 /**
  * Hash data with blake3. Uses the browser WASM build.
@@ -40,7 +40,6 @@ export async function signAndPublishTweet(
   tid: number,
   text: string,
   signingKeySecret: Uint8Array,
-  hubUrl: string = HUB_URL,
   parentHash?: string,
   channelId?: string,
   embeds?: string[]
@@ -79,7 +78,7 @@ export async function signAndPublishTweet(
     signer: toBase64(keyPair.publicKey),
   };
 
-  const res = await fetch(`${hubUrl}/v1/submit`, {
+  const res = await hubFetch("/v1/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(message),

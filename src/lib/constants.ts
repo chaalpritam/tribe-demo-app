@@ -5,6 +5,15 @@ export const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https:/
 export const HUB_URL = process.env.NEXT_PUBLIC_HUB_URL || "http://localhost:4000";
 export const ER_SERVER_URL = process.env.NEXT_PUBLIC_ER_SERVER_URL || "http://localhost:3003";
 
+// Multi-node: comma-separated URLs for failover. Falls back to single URL above.
+export const HUB_URLS: string[] = process.env.NEXT_PUBLIC_HUB_URLS
+  ? process.env.NEXT_PUBLIC_HUB_URLS.split(",").map((u) => u.trim())
+  : [HUB_URL];
+
+export const ER_SERVER_URLS: string[] = process.env.NEXT_PUBLIC_ER_SERVER_URLS
+  ? process.env.NEXT_PUBLIC_ER_SERVER_URLS.split(",").map((u) => u.trim())
+  : [ER_SERVER_URL];
+
 export const PROGRAM_IDS = {
   tidRegistry: new PublicKey("4BSmJmRGQWKgioP9DG2bUuRS9U3V6soRauU7Nv6yGvHD"),
   appKeyRegistry: new PublicKey("5LtbFUeAoXWRovGpyWnRJhiCS62XsTYKVErT9kPpv4hN"),

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { STORAGE_KEYS, HUB_URL } from "@/lib/constants";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { hubFetch } from "@/lib/failover";
 
 interface LikeButtonProps {
   tweetHash: string;
@@ -78,7 +79,7 @@ export default function LikeButton({
         signer: toBase64(keyPair.publicKey),
       };
 
-      const res = await fetch(`${HUB_URL}/v1/submit`, {
+      const res = await hubFetch("/v1/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(message),

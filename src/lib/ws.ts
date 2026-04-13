@@ -1,4 +1,4 @@
-import { HUB_URL } from "./constants";
+import { getHubBaseUrl } from "./failover";
 
 type MessageHandler = (event: string, data: unknown) => void;
 
@@ -8,8 +8,8 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let subscribedTid: string | null = null;
 
 function getWsUrl(): string {
-  // Convert http://localhost:4000 → ws://localhost:4000/v1/ws
-  return HUB_URL.replace(/^http/, "ws") + "/v1/ws";
+  // Resolves to the currently healthy hub, converting http → ws
+  return getHubBaseUrl().replace(/^http/, "ws") + "/v1/ws";
 }
 
 function connect() {
@@ -37,12 +37,13 @@ function connect() {
     };
 
     socket.onclose = () => {
-      // Reconnect after 3 seconds
+      // Reconnect with jitter (1-5s) to prevent thundering herd
       if (!reconnectTimer) {
+        const jitter = 1000 + Math.random() * 4000;
         reconnectTimer = setTimeout(() => {
           reconnectTimer = null;
           connect();
-        }, 3000);
+        }, jitter);
       }
     };
 
@@ -55,14 +56,8 @@ function connect() {
 }
 
 /**
- * Subscribe to real-time events from the indexer.
+ * Subscribe to real-time events from the hub.
  * Returns an unsubscribe function.
- *
- * Events received:
- *   - "new_tweet"     — a new tweet was indexed
- *   - "new_follow"    — a follow event was processed
- *   - "notification"  — a notification for the subscribed TID
- *   - "connected"     — initial connection confirmation
  */
 export function onFeedUpdate(handler: MessageHandler): () => void {
   handlers.push(handler);
@@ -79,7 +74,6 @@ export function onFeedUpdate(handler: MessageHandler): () => void {
 
 /**
  * Subscribe to notifications for a specific TID.
- * The server will push "notification" events for this TID.
  */
 export function subscribeTid(tid: string): void {
   subscribedTid = tid;

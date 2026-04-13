@@ -88,7 +88,6 @@ export default function TweetComposer({
         tid,
         text.trim() || (mediaHashes.length > 0 ? "" : ""),
         secretKey,
-        undefined,
         parentHash,
         channelId,
         embeds

@@ -1,4 +1,4 @@
-import { ER_SERVER_URL } from "./constants";
+import { erFetch } from "./failover";
 
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -21,7 +21,7 @@ export async function erFollow(
   const payload = `tribe-er:follow:${followerTid}:${followingTid}:${timestamp}`;
   const signature = await signMessage(new TextEncoder().encode(payload));
 
-  const res = await fetch(`${ER_SERVER_URL}/v1/follow`, {
+  const res = await erFetch("/v1/follow", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -53,7 +53,7 @@ export async function erUnfollow(
   const payload = `tribe-er:unfollow:${followerTid}:${followingTid}:${timestamp}`;
   const signature = await signMessage(new TextEncoder().encode(payload));
 
-  const res = await fetch(`${ER_SERVER_URL}/v1/unfollow`, {
+  const res = await erFetch("/v1/unfollow", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -79,11 +79,13 @@ export async function erGetLink(
   followerTid: number,
   followingTid: number
 ): Promise<{ exists: boolean; status: string }> {
-  const res = await fetch(
-    `${ER_SERVER_URL}/v1/link/${followerTid}/${followingTid}`
-  );
-  if (!res.ok) return { exists: false, status: "unknown" };
-  return res.json();
+  try {
+    const res = await erFetch(`/v1/link/${followerTid}/${followingTid}`);
+    if (!res.ok) return { exists: false, status: "unknown" };
+    return res.json();
+  } catch {
+    return { exists: false, status: "unknown" };
+  }
 }
 
 /**
@@ -92,7 +94,11 @@ export async function erGetLink(
 export async function erGetProfile(
   tid: number
 ): Promise<{ tid: number; followingCount: number; followersCount: number } | null> {
-  const res = await fetch(`${ER_SERVER_URL}/v1/profile/${tid}`);
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await erFetch(`/v1/profile/${tid}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
