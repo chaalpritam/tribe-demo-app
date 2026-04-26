@@ -4,6 +4,7 @@ import Link from "next/link";
 import LikeButton from "./LikeButton";
 import BookmarkButton from "./BookmarkButton";
 import RetweetButton from "./RetweetButton";
+import TipButton from "./TipButton";
 
 interface TweetCardProps {
   text: string;
@@ -100,6 +101,15 @@ export default function TweetCard({
 
               {/* Bookmark button */}
               <BookmarkButton tweetHash={hash} />
+
+              {/* Tip button (on-chain SOL transfer + TIP_ADD envelope) */}
+              {myTid !== undefined && (
+                <TipButton
+                  recipientTid={tid}
+                  senderTid={myTid}
+                  tweetHash={hash}
+                />
+              )}
             </div>
           )}
         </div>

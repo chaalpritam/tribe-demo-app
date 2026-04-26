@@ -96,3 +96,66 @@ export async function signAndPublishTweet(
 
   return res.json();
 }
+
+/**
+ * Publish a signed TIP_ADD envelope to the hub. The on-chain settlement
+ * (lamport transfer + TipRecord) happens via tribe.ts:sendTipOnchain;
+ * this is the social-feed mirror that lets clients render the tip
+ * alongside its on-chain receipt anchor.
+ */
+export async function signAndPublishTip(args: {
+  senderTid: number;
+  recipientTid: number;
+  amount: number;
+  currency?: string;
+  /** Base64 hash of the tweet being tipped (optional). */
+  targetHash?: string;
+  /** Solana tx signature for the on-chain TipRecord (optional). */
+  txSignature?: string;
+}): Promise<{ hash: string }> {
+  const secretKeyB64 = localStorage.getItem("tribe_app_key_secret");
+  if (!secretKeyB64) throw new Error("No app key in localStorage");
+  const secretKey = Uint8Array.from(atob(secretKeyB64), (c) => c.charCodeAt(0));
+  const keyPair = nacl.sign.keyPair.fromSecretKey(secretKey);
+
+  const body: Record<string, unknown> = {
+    recipient_tid: args.recipientTid,
+    amount: args.amount,
+  };
+  if (args.currency) body.currency = args.currency;
+  if (args.targetHash) body.target_hash = args.targetHash;
+  if (args.txSignature) body.tx_signature = args.txSignature;
+
+  const data = {
+    type: 25, // TIP_ADD
+    tid: args.senderTid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body,
+  };
+
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const signature = nacl.sign.detached(hashBytes, secretKey);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Tip envelope failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}

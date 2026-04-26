@@ -19,6 +19,7 @@ export const PROGRAM_IDS = {
   appKeyRegistry: new PublicKey("5LtbFUeAoXWRovGpyWnRJhiCS62XsTYKVErT9kPpv4hN"),
   usernameRegistry: new PublicKey("65oKjSjcGYR61ASzDYczbodz6H8TARtJyQGvb5V9y9W1"),
   socialGraph: new PublicKey("8kKnWvbmTjWq5uPePk79RRbQMAXCszNFzHdRwUS4N74w"),
+  tipRegistry: new PublicKey("TipReg1111111111111111111111111111111111111"),
 };
 
 export const STORAGE_KEYS = {
