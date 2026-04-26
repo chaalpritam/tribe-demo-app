@@ -46,13 +46,18 @@ export async function signAndPublishTweet(
 ): Promise<{ hash: string }> {
   const timestamp = Math.floor(Date.now() / 1000);
 
+  // Every tweet must belong to a channel. Fall back to the reserved
+  // "general" channel so the protocol's "post to everyone" default
+  // works even when the caller didn't pick one.
+  const resolvedChannelId = (channelId || "").trim() || "general";
+
   const body: Record<string, unknown> = {
     text,
     mentions: [] as number[],
     embeds: embeds ?? ([] as string[]),
+    channel_id: resolvedChannelId,
   };
   if (parentHash) body.parent_hash = parentHash;
-  if (channelId) body.channel_id = channelId;
 
   const data = {
     type: 1, // TWEET_ADD

@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { signAndPublishTweet } from "@/lib/messages";
-import { uploadMedia, getMediaUrl } from "@/lib/api";
+import { uploadMedia, getMediaUrl, fetchChannels } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 
 const MAX_CHARS = 320;
+const GENERAL_CHANNEL_ID = "general";
+
+interface ComposerChannelOption {
+  id: string;
+  name: string;
+  kind: number | null;
+}
 
 interface TweetComposerProps {
   tid: number;
@@ -29,7 +36,52 @@ export default function TweetComposer({
   const [error, setError] = useState<string | null>(null);
   const [mediaHashes, setMediaHashes] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [channelOptions, setChannelOptions] = useState<ComposerChannelOption[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<string>(channelId || GENERAL_CHANNEL_ID);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Replies inherit the parent's channel; the picker is only shown
+  // for top-level tweets where the user hasn't been routed in via a
+  // specific channel page.
+  const showChannelPicker = !parentHash && !channelId;
+
+  useEffect(() => {
+    if (!showChannelPicker) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchChannels();
+        const list = (data?.channels ?? []) as Array<{
+          id: string;
+          name?: string | null;
+          kind?: number | null;
+        }>;
+        const opts: ComposerChannelOption[] = list
+          .filter((c) => !!c.id)
+          .map((c) => ({
+            id: c.id,
+            name: c.name?.trim() || c.id,
+            kind: c.kind ?? null,
+          }));
+        // Always surface "general" first, even on empty hubs.
+        if (!opts.some((o) => o.id === GENERAL_CHANNEL_ID)) {
+          opts.unshift({ id: GENERAL_CHANNEL_ID, name: "General", kind: 1 });
+        } else {
+          opts.sort((a, b) =>
+            a.id === GENERAL_CHANNEL_ID ? -1 : b.id === GENERAL_CHANNEL_ID ? 1 : 0
+          );
+        }
+        if (!cancelled) setChannelOptions(opts);
+      } catch {
+        if (!cancelled) {
+          setChannelOptions([{ id: GENERAL_CHANNEL_ID, name: "General", kind: 1 }]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showChannelPicker]);
 
   const charsLeft = MAX_CHARS - text.length;
   const isOverLimit = charsLeft < 0;
@@ -84,12 +136,17 @@ export default function TweetComposer({
       // Embeds are media URLs
       const embeds = mediaHashes.map((h) => getMediaUrl(h));
 
+      // Replies & channel-page tweets inherit their channel from props;
+      // top-level tweets use whatever the picker has selected (defaulting
+      // to "general" so every tweet always lands in a channel).
+      const targetChannelId = channelId ?? selectedChannel ?? GENERAL_CHANNEL_ID;
+
       await signAndPublishTweet(
         tid,
         text.trim() || (mediaHashes.length > 0 ? "" : ""),
         secretKey,
         parentHash,
-        channelId,
+        targetChannelId,
         embeds
       );
       setText("");
@@ -100,7 +157,7 @@ export default function TweetComposer({
     } finally {
       setSubmitting(false);
     }
-  }, [text, mediaHashes, isOverLimit, submitting, tid, parentHash, channelId, onTweetPublished]);
+  }, [text, mediaHashes, isOverLimit, submitting, tid, parentHash, channelId, selectedChannel, onTweetPublished]);
 
   return (
     <div className={compact ? "p-3" : "border-b border-gray-200 p-4"}>
@@ -131,6 +188,27 @@ export default function TweetComposer({
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showChannelPicker && (
+        <div className="mt-2 flex items-center gap-2 text-sm">
+          <label htmlFor="composer-channel" className="text-gray-500">
+            Posting to
+          </label>
+          <select
+            id="composer-channel"
+            value={selectedChannel}
+            onChange={(e) => setSelectedChannel(e.target.value)}
+            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-gray-900 outline-none focus:border-blue-500"
+          >
+            {channelOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.kind === 2 ? "📍 " : opt.kind === 1 ? "" : "#"}
+                {opt.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
