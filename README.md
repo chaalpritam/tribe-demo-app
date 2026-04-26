@@ -94,7 +94,7 @@ pnpm dev                      # http://localhost:3002
 ## Tech Stack
 
 - Next.js 16 / React 19
-- TypeScript 5.8
+- TypeScript 5.x
 - Tailwind CSS 4
 - Solana wallet adapter (Phantom, Solflare)
 - tweetnacl (ed25519 signing)
