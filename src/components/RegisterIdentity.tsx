@@ -1,18 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import nacl from "tweetnacl";
-import { PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import {
   registerTid,
   addAppKey,
   registerUsername,
   initSocialProfile,
 } from "@/lib/tribe";
-import { STORAGE_KEYS } from "@/lib/constants";
+import { SOLANA_RPC_URL, STORAGE_KEYS } from "@/lib/constants";
+
+// Below this we assume the wallet can't afford a TID register tx
+// (rent + fees ≈ 0.005 SOL). Threshold is generous so we surface
+// the airdrop UI before the user actually hits a "simulation failed"
+// — clearer for first-time browser-wallet users.
+const MIN_BALANCE_LAMPORTS = 0.01 * LAMPORTS_PER_SOL;
+
+function detectCluster(rpcUrl: string): "devnet" | "testnet" | "mainnet" | "localnet" {
+  if (rpcUrl.includes("devnet")) return "devnet";
+  if (rpcUrl.includes("testnet")) return "testnet";
+  if (rpcUrl.includes("localhost") || rpcUrl.includes("127.0.0.1")) return "localnet";
+  return "mainnet";
+}
 
 export type Step = "register" | "username" | "appkey" | "done";
 
@@ -54,7 +67,16 @@ export default function RegisterIdentity({
       // If tx is null, the wallet already had a TID — skip straight ahead
       setStep("username");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to register TID");
+      const raw = err instanceof Error ? err.message : "Failed to register TID";
+      // Common Solana error shapes that mean "not enough SOL". Surface
+      // the airdrop hint so the user doesn't have to read a stack trace.
+      const insufficientFunds =
+        /insufficient|InsufficientFundsForRent|0x1$|debit an account/i.test(raw);
+      setError(
+        insufficientFunds
+          ? "This wallet doesn't have enough SOL to pay for registration. See the yellow banner above to airdrop."
+          : raw,
+      );
     } finally {
       setLoading(false);
     }
@@ -147,6 +169,7 @@ export default function RegisterIdentity({
           <p className="text-sm text-gray-700">
             Step 1 of 3: Register your Tribe ID (TID) on Solana.
           </p>
+          {wallet && <LowBalanceBanner publicKey={wallet.publicKey} />}
           <button
             onClick={handleRegisterTid}
             disabled={loading}
@@ -227,6 +250,155 @@ export default function RegisterIdentity({
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Inline banner shown on the Register TID screen when the connected
+ * wallet doesn't have enough SOL to pay for the registration tx (rent
+ * + fees). Polls balance every 5s so external funding (web faucet, CLI
+ * airdrop, transfer from another wallet) is reflected automatically.
+ *
+ * On devnet/testnet/localnet, exposes a one-click airdrop button.
+ * On mainnet, falls back to instructions ("send SOL to this address").
+ */
+function LowBalanceBanner({ publicKey }: { publicKey: PublicKey }) {
+  const { connection } = useConnection();
+  const [lamports, setLamports] = useState<number | null>(null);
+  const [airdropping, setAirdropping] = useState(false);
+  const [airdropError, setAirdropError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const cluster = detectCluster(SOLANA_RPC_URL);
+
+  const refreshBalance = useCallback(async () => {
+    try {
+      const bal = await connection.getBalance(publicKey, "confirmed");
+      setLamports(bal);
+    } catch {
+      setLamports(null);
+    }
+  }, [connection, publicKey]);
+
+  // Poll balance: catches both manual airdrops (user used CLI / faucet
+  // in another tab) and the just-after-airdrop state where finality
+  // can lag the requestAirdrop response.
+  useEffect(() => {
+    refreshBalance();
+    const id = setInterval(refreshBalance, 5000);
+    return () => clearInterval(id);
+  }, [refreshBalance]);
+
+  const handleAirdrop = useCallback(async () => {
+    setAirdropping(true);
+    setAirdropError(null);
+    try {
+      const sig = await connection.requestAirdrop(publicKey, LAMPORTS_PER_SOL);
+      const blockhash = await connection.getLatestBlockhash();
+      await connection.confirmTransaction(
+        { signature: sig, ...blockhash },
+        "confirmed",
+      );
+      await refreshBalance();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Airdrop failed";
+      // Devnet airdrops are aggressively rate-limited per IP. Surface
+      // that distinctly so the user goes to the web faucet instead of
+      // hammering retry.
+      if (/429|rate|limit/i.test(msg)) {
+        setAirdropError(
+          "Airdrop rate-limited. Try the web faucet (link below) or wait a few minutes.",
+        );
+      } else {
+        setAirdropError(msg);
+      }
+    } finally {
+      setAirdropping(false);
+    }
+  }, [connection, publicKey, refreshBalance]);
+
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(publicKey.toBase58());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [publicKey]);
+
+  // Don't render anything until we have a balance read; once we do,
+  // hide if the wallet is funded.
+  if (lamports === null || lamports >= MIN_BALANCE_LAMPORTS) return null;
+
+  const sol = (lamports / LAMPORTS_PER_SOL).toFixed(4);
+  const addressShort = `${publicKey.toBase58().slice(0, 8)}…${publicKey
+    .toBase58()
+    .slice(-4)}`;
+  const canAirdrop = cluster !== "mainnet";
+
+  return (
+    <div className="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3">
+      <p className="text-sm font-semibold text-yellow-900">
+        Low SOL balance — registration will fail.
+      </p>
+      <p className="mt-1 text-xs text-yellow-900">
+        This wallet has <span className="font-mono">{sol} SOL</span> on{" "}
+        <span className="font-semibold">{cluster}</span>. Registering a TID
+        needs ~0.005 SOL for rent + fees.
+      </p>
+
+      <div className="mt-3 flex items-center gap-2">
+        <code className="flex-1 truncate rounded bg-yellow-100 px-2 py-1 font-mono text-xs text-yellow-900">
+          {addressShort}
+        </code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded border border-yellow-400 bg-white px-2 py-1 text-xs text-yellow-900 hover:bg-yellow-100"
+        >
+          {copied ? "Copied" : "Copy address"}
+        </button>
+      </div>
+
+      {canAirdrop ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleAirdrop}
+            disabled={airdropping}
+            className="rounded-lg bg-yellow-600 px-3 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:opacity-50"
+          >
+            {airdropping ? "Airdropping…" : "Airdrop 1 SOL"}
+          </button>
+          {cluster === "devnet" && (
+            <p className="text-xs text-yellow-900">
+              Or use the web faucet:{" "}
+              <a
+                href={`https://faucet.solana.com/?address=${publicKey.toBase58()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                faucet.solana.com
+              </a>
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-yellow-900">
+          On <span className="font-semibold">mainnet</span>, send SOL to the
+          address above from any wallet, then refresh.
+        </p>
+      )}
+
+      {airdropError && (
+        <p className="mt-2 text-xs text-red-700">{airdropError}</p>
+      )}
+
+      <button
+        type="button"
+        onClick={refreshBalance}
+        className="mt-2 text-xs text-yellow-800 underline hover:text-yellow-900"
+      >
+        Refresh balance
+      </button>
     </div>
   );
 }
