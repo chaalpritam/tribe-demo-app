@@ -1,40 +1,83 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { hubFetch } from "@/lib/failover";
+import { fetchBookmarks } from "@/lib/api";
+import { signAndBookmark } from "@/lib/messages";
 
 interface BookmarkButtonProps {
   tweetHash: string;
+  /** When provided, skips the server lookup on mount. */
+  initialBookmarked?: boolean;
 }
 
-export default function BookmarkButton({ tweetHash }: BookmarkButtonProps) {
-  const [bookmarked, setBookmarked] = useState(false);
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+}
+
+export default function BookmarkButton({
+  tweetHash,
+  initialBookmarked,
+}: BookmarkButtonProps) {
+  const [bookmarked, setBookmarked] = useState(initialBookmarked ?? false);
   const [loading, setLoading] = useState(false);
 
-  const handleToggle = useCallback(async () => {
+  // Fetch the user's bookmarks once on mount so the button reflects
+  // existing state across reloads. Skipped when initialBookmarked is
+  // passed by a parent that already knows.
+  useEffect(() => {
+    if (initialBookmarked !== undefined) return;
     const tid = localStorage.getItem(STORAGE_KEYS.tid);
-    if (!tid || loading) return;
+    if (!tid) return;
+    let cancelled = false;
+    fetchBookmarks(tid)
+      .then((rows) => {
+        if (cancelled) return;
+        if (Array.isArray(rows)) {
+          setBookmarked(rows.some((b) => b.target_hash === tweetHash));
+        } else if (
+          rows &&
+          typeof rows === "object" &&
+          Array.isArray((rows as { bookmarks?: unknown }).bookmarks)
+        ) {
+          setBookmarked(
+            (rows as { bookmarks: { target_hash: string }[] }).bookmarks.some(
+              (b) => b.target_hash === tweetHash,
+            ),
+          );
+        }
+      })
+      .catch(() => {
+        // Non-fatal — leave default state
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tweetHash, initialBookmarked]);
+
+  const handleToggle = useCallback(async () => {
+    if (loading) return;
+    const tidStr = localStorage.getItem(STORAGE_KEYS.tid);
+    const appKey = loadAppKey();
+    if (!tidStr || !appKey) return;
+
+    const tid = parseInt(tidStr, 10);
+    const wantAdd = !bookmarked;
+    // Optimistic flip; revert on failure.
+    setBookmarked(wantAdd);
     setLoading(true);
     try {
-      if (bookmarked) {
-        await hubFetch(`/v1/bookmarks/${tid}`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tweetHash }),
-        });
-        setBookmarked(false);
-      } else {
-        await hubFetch(`/v1/bookmarks/${tid}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tweetHash }),
-        });
-        setBookmarked(true);
-      }
-    } catch {
-      // Revert optimistic state on failure
-      setBookmarked((prev) => !prev);
+      await signAndBookmark({
+        tid,
+        targetHash: tweetHash,
+        add: wantAdd,
+        signingKeySecret: appKey,
+      });
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
+      setBookmarked(!wantAdd);
     } finally {
       setLoading(false);
     }
