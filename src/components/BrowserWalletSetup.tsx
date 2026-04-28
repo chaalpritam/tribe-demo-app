@@ -20,7 +20,7 @@ type Step =
   | { kind: "import"; phrase: string; error: string | null };
 
 export default function BrowserWalletSetup() {
-  const { select } = useWallet();
+  const { select, connect, wallet } = useWallet();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>({ kind: "choose" });
   const [busy, setBusy] = useState(false);
@@ -39,13 +39,21 @@ export default function BrowserWalletSetup() {
   const finishSetup = useCallback(async () => {
     setOpen(false);
     setStep({ kind: "choose" });
-    // Tell the adapter (and any other listeners) that the keypair is
-    // now available. Then re-select the wallet so the standard
-    // wallet-adapter-react flow continues with connect().
     window.dispatchEvent(new Event(BROWSER_WALLET_READY));
-    // Defer one frame so the adapter's readyStateChange fires first.
-    requestAnimationFrame(() => select(BROWSER_WALLET_NAME));
-  }, [select]);
+
+    // Make sure Browser Wallet is the selected adapter, then trigger
+    // a fresh connect now that the keypair exists. Without this, the
+    // user would have to click "Connect Wallet" a second time.
+    if (wallet?.adapter.name !== BROWSER_WALLET_NAME) {
+      select(BROWSER_WALLET_NAME);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    try {
+      await connect();
+    } catch (err) {
+      console.warn("Browser wallet connect after setup failed:", err);
+    }
+  }, [select, connect, wallet]);
 
   const handleCreate = useCallback(async () => {
     if (step.kind !== "create" || !step.confirmed) return;

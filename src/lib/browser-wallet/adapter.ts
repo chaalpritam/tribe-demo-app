@@ -16,7 +16,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import nacl from "tweetnacl";
-import { hasStoredKeypair, loadStoredKeypair } from "./keypair-store";
+import { loadStoredKeypair } from "./keypair-store";
 
 export const BROWSER_WALLET_NAME = "Browser Wallet" as WalletName<"Browser Wallet">;
 
@@ -42,12 +42,17 @@ export class BrowserWalletAdapter extends BaseMessageSignerWalletAdapter {
 
   private _publicKey: PublicKey | null = null;
   private _connecting = false;
+  // Always "Installed" in the browser. Unlike Phantom/Solflare we don't
+  // depend on an extension being present — the keypair lives entirely
+  // in this page's localStorage, so nothing to "load". Marking it
+  // Installed puts it at the top of the wallet modal with a Connect
+  // button (instead of a redirect to a download page) and ensures the
+  // first-time setup flow runs inside connect() rather than the modal
+  // opening our adapter `url` in a new tab.
   private _readyState: WalletReadyState =
     typeof window === "undefined"
       ? WalletReadyState.Unsupported
-      : hasStoredKeypair()
-        ? WalletReadyState.Installed
-        : WalletReadyState.Loadable;
+      : WalletReadyState.Installed;
 
   get publicKey(): PublicKey | null {
     return this._publicKey;
@@ -59,22 +64,6 @@ export class BrowserWalletAdapter extends BaseMessageSignerWalletAdapter {
 
   get readyState(): WalletReadyState {
     return this._readyState;
-  }
-
-  /**
-   * Re-evaluate whether a stored keypair exists. Called by the setup
-   * modal after the user creates/imports so the adapter flips to
-   * Installed without a page reload.
-   */
-  refreshReadyState(): void {
-    if (typeof window === "undefined") return;
-    const next = hasStoredKeypair()
-      ? WalletReadyState.Installed
-      : WalletReadyState.Loadable;
-    if (next !== this._readyState) {
-      this._readyState = next;
-      this.emit("readyStateChange", next);
-    }
   }
 
   async connect(): Promise<void> {
