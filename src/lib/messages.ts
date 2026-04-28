@@ -67,7 +67,9 @@ export async function signAndPublishTweet(
     body,
   };
 
-  // Deterministic JSON → UTF-8 bytes → blake3 hash
+  // Deterministic JSON → UTF-8 bytes → blake3 hash. dataBytes are
+  // shipped on the wire (base64) so the hub can recompute blake3 and
+  // reject any relay that tampered with hash/signature.
   const dataBytes = new TextEncoder().encode(JSON.stringify(data));
   const hashBytes = await blake3Hash(dataBytes);
 
@@ -78,6 +80,7 @@ export async function signAndPublishTweet(
   const message = {
     protocolVersion: 1,
     data,
+    dataB64: toBase64(dataBytes),
     hash: toBase64(hashBytes),
     signature: toBase64(signature),
     signer: toBase64(keyPair.publicKey),
@@ -141,6 +144,7 @@ export async function signAndPublishTip(args: {
   const message = {
     protocolVersion: 1,
     data,
+    dataB64: toBase64(dataBytes),
     hash: toBase64(hashBytes),
     signature: toBase64(signature),
     signer: toBase64(keyPair.publicKey),

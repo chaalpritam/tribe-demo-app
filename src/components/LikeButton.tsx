@@ -74,6 +74,7 @@ export default function LikeButton({
       const message = {
         protocolVersion: 1,
         data,
+        dataB64: toBase64(dataBytes),
         hash: toBase64(hashBytes),
         signature: toBase64(signature),
         signer: toBase64(keyPair.publicKey),
