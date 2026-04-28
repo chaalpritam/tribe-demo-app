@@ -4,15 +4,16 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  fetchConversations,
-  fetchDmMessages,
-  getDmKey,
-  sendDm,
-  registerDmKey,
-} from "@/lib/api";
+import { fetchConversations, fetchDmMessages, getDmKey } from "@/lib/api";
+import { signAndRegisterDmKey, signAndSendDm } from "@/lib/messages";
 import { getDmPublicKey, encryptMessage, decryptMessage } from "@/lib/crypto";
 import { STORAGE_KEYS } from "@/lib/constants";
+
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+}
 
 export default function MessagesPageWrapper() {
   return (
@@ -37,7 +38,7 @@ interface Conversation {
 }
 
 interface DmMessage {
-  id: number;
+  id: string;
   sender_tid: string;
   sender_username: string | null;
   encrypted_text: string;
@@ -59,15 +60,22 @@ function MessagesPage() {
   const [messageInput, setMessageInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
-    if (stored) {
-      setMyTid(stored);
-      // Register DM key on load
-      const pubkey = getDmPublicKey();
-      registerDmKey(stored, pubkey).catch(() => {});
-    }
+    if (!stored) return;
+    setMyTid(stored);
+    const appKey = loadAppKey();
+    if (!appKey) return;
+    // Register the user's x25519 DM pubkey on every load so a fresh
+    // sessionStorage keypair (rotated automatically when the tab dies)
+    // gets advertised to peers. Failures are non-fatal; the user can
+    // still browse conversations.
+    const pubkey = getDmPublicKey();
+    signAndRegisterDmKey(parseInt(stored, 10), pubkey, appKey).catch((err) => {
+      console.warn("DM key register failed:", err);
+    });
   }, []);
 
   // Load conversations list
@@ -81,12 +89,12 @@ function MessagesPage() {
 
   // Load messages for a conversation
   useEffect(() => {
-    if (!convId) return;
+    if (!convId || !myTid) return;
     setLoading(true);
-    fetchDmMessages(convId)
+    fetchDmMessages(convId, myTid)
       .then((data) => setMessages(data?.messages ?? []))
       .finally(() => setLoading(false));
-  }, [convId]);
+  }, [convId, myTid]);
 
   // Load recipient key for new conversation
   useEffect(() => {
@@ -110,18 +118,34 @@ function MessagesPage() {
     const recipientTid = newTid || otherTid;
     if (!recipientTid || !otherPubkey) return;
 
+    const appKey = loadAppKey();
+    if (!appKey) {
+      setError("No app key found in this browser. Register an app key to send DMs.");
+      return;
+    }
+
     setSending(true);
+    setError(null);
     try {
       const { encrypted, nonce } = encryptMessage(messageInput.trim(), otherPubkey);
-      await sendDm(myTid, recipientTid, encrypted, nonce);
+      await signAndSendDm({
+        senderTid: parseInt(myTid, 10),
+        recipientTid: parseInt(recipientTid, 10),
+        ciphertext: encrypted,
+        nonce,
+        senderX25519: getDmPublicKey(),
+        signingKeySecret: appKey,
+      });
       setMessageInput("");
       // Reload messages
       if (convId) {
-        const data = await fetchDmMessages(convId);
+        const data = await fetchDmMessages(convId, myTid);
         setMessages(data?.messages ?? []);
       }
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send DM";
       console.error("Failed to send DM:", err);
+      setError(msg);
     } finally {
       setSending(false);
     }
@@ -190,6 +214,11 @@ function MessagesPage() {
           )}
         </div>
 
+        {error && (
+          <p className="border-t border-red-900/40 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+            {error}
+          </p>
+        )}
         <div className="flex gap-2 border-t border-gray-800 pt-3">
           <input
             type="text"
