@@ -163,3 +163,105 @@ export async function signAndPublishTip(args: {
 
   return res.json();
 }
+
+/**
+ * Sign and submit a DM_KEY_REGISTER envelope so the hub can advertise
+ * the caller's x25519 pubkey to other clients (used as the "send to me"
+ * key for nacl.box DMs). Idempotent — overwrites any prior key for
+ * this TID.
+ */
+export async function signAndRegisterDmKey(
+  tid: number,
+  x25519Pubkey: string,
+  signingKeySecret: Uint8Array,
+): Promise<{ tid: number; x25519_pubkey: string }> {
+  const data = {
+    type: 12, // DM_KEY_REGISTER
+    tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body: { x25519_pubkey: x25519Pubkey },
+  };
+
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/dm/register-key", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`DM key register failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Sign and submit a DM_SEND envelope. The hub stores ciphertext as-is
+ * (never sees plaintext), gossips it to peer hubs, and surfaces it
+ * via /v1/dm/messages/:conversationId. Recipient decrypts client-side
+ * with the sender's x25519 key.
+ */
+export async function signAndSendDm(args: {
+  senderTid: number;
+  recipientTid: number;
+  ciphertext: string;
+  nonce: string;
+  senderX25519: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string; conversation_id: string }> {
+  const data = {
+    type: 13, // DM_SEND
+    tid: args.senderTid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body: {
+      recipient_tid: args.recipientTid,
+      ciphertext: args.ciphertext,
+      nonce: args.nonce,
+      sender_x25519: args.senderX25519,
+    },
+  };
+
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/dm/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`DM send failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}
