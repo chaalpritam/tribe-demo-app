@@ -416,3 +416,61 @@ export async function signAndLikeTweet(args: {
 
   return res.json();
 }
+
+/**
+ * Set or update a single profile field via USER_DATA_ADD (type 7).
+ * The hub keeps a per-tid history in user_data and exposes the
+ * latest-per-field on /v1/user/:tid as `profile`.
+ *
+ * Allowed fields (enforced by hub): displayName, bio, pfpUrl, url,
+ * location, city. Max value length: 500 chars.
+ */
+export type ProfileField =
+  | "displayName"
+  | "bio"
+  | "pfpUrl"
+  | "url"
+  | "location"
+  | "city";
+
+export async function signAndPublishUserData(args: {
+  tid: number;
+  field: ProfileField;
+  value: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const data = {
+    type: 7, // USER_DATA_ADD
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body: { field: args.field, value: args.value },
+  };
+
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`User data update failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}

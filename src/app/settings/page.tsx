@@ -3,15 +3,40 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { hubFetch } from "@/lib/failover";
 import { fetchUser, uploadMedia, getMediaUrl } from "@/lib/api";
+import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
+
+interface ProfileForm {
+  displayName: string;
+  bio: string;
+  pfpUrl: string;
+  url: string;
+  location: string;
+  city: string;
+}
+
+const EMPTY_FORM: ProfileForm = {
+  displayName: "",
+  bio: "",
+  pfpUrl: "",
+  url: "",
+  location: "",
+  city: "",
+};
+
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+}
 
 export default function SettingsPage() {
   const { connected } = useWallet();
   const [myTid, setMyTid] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
+  // Snapshot of what's on the server — used to compute which fields
+  // actually changed so we only re-publish what's needed.
+  const [original, setOriginal] = useState<ProfileForm>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -27,9 +52,19 @@ export default function SettingsPage() {
     setLoading(true);
     fetchUser(myTid)
       .then((user) => {
-        setDisplayName(user?.display_name ?? "");
-        setBio(user?.bio ?? "");
-        setAvatarUrl(user?.avatar_url ?? "");
+        // Hub's /v1/user/:tid returns { ...tid_row, profile: {field: value} }
+        // where field uses protocol names (displayName, pfpUrl, etc.).
+        const p = (user?.profile ?? {}) as Record<string, string>;
+        const next: ProfileForm = {
+          displayName: p.displayName ?? "",
+          bio: p.bio ?? "",
+          pfpUrl: p.pfpUrl ?? "",
+          url: p.url ?? "",
+          location: p.location ?? "",
+          city: p.city ?? "",
+        };
+        setForm(next);
+        setOriginal(next);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -42,7 +77,7 @@ export default function SettingsPage() {
       setUploading(true);
       try {
         const result = await uploadMedia(file);
-        setAvatarUrl(getMediaUrl(result.hash));
+        setForm((f) => ({ ...f, pfpUrl: getMediaUrl(result.hash) }));
       } catch {
         setMessage("Failed to upload avatar");
       } finally {
@@ -54,30 +89,51 @@ export default function SettingsPage() {
 
   const handleSave = useCallback(async () => {
     if (!myTid) return;
+    const appKey = loadAppKey();
+    if (!appKey) {
+      setMessage("No app key — register your identity first");
+      return;
+    }
     setSaving(true);
     setMessage(null);
+
+    const tid = parseInt(myTid, 10);
+    const fields: ProfileField[] = [
+      "displayName",
+      "bio",
+      "pfpUrl",
+      "url",
+      "location",
+      "city",
+    ];
+    // Only re-publish fields whose value changed since load — saves
+    // hub round-trips and avoids cluttering user_data with no-op rows.
+    const changed = fields.filter((k) => form[k] !== original[k]);
+
+    if (changed.length === 0) {
+      setMessage("No changes to save");
+      setSaving(false);
+      return;
+    }
+
     try {
-      const res = await hubFetch(`/v1/user/${myTid}/profile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName: displayName || null,
-          bio: bio || null,
-          avatarUrl: avatarUrl || null,
-        }),
-      });
-      if (res.ok) {
-        setMessage("Profile saved!");
-      } else {
-        const err = await res.json();
-        setMessage(err.error ?? "Failed to save");
+      for (const field of changed) {
+        await signAndPublishUserData({
+          tid,
+          field,
+          value: form[field],
+          signingKeySecret: appKey,
+        });
       }
-    } catch {
-      setMessage("Failed to save profile");
+      setOriginal(form);
+      setMessage(`Saved ${changed.length} field${changed.length === 1 ? "" : "s"}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save";
+      setMessage(msg);
     } finally {
       setSaving(false);
     }
-  }, [myTid, displayName, bio, avatarUrl]);
+  }, [myTid, form, original]);
 
   if (!connected) {
     return (
@@ -106,9 +162,9 @@ export default function SettingsPage() {
             Avatar
           </label>
           <div className="mt-2 flex items-center gap-4">
-            {avatarUrl ? (
+            {form.pfpUrl ? (
               <img
-                src={avatarUrl}
+                src={form.pfpUrl}
                 alt="Avatar"
                 className="h-16 w-16 rounded-full object-cover"
               />
@@ -129,40 +185,47 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Display Name */}
-        <div>
-          <label htmlFor="display-name" className="block text-sm font-medium text-gray-300">
-            Display Name
-          </label>
-          <input
-            id="display-name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
-            maxLength={50}
-            className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 outline-none focus:border-purple-600"
-          />
-        </div>
+        <Field
+          label="Display name"
+          value={form.displayName}
+          maxLength={50}
+          onChange={(v) => setForm((f) => ({ ...f, displayName: v }))}
+          placeholder="Your name"
+        />
 
-        {/* Bio */}
-        <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-gray-300">
-            Bio
-          </label>
-          <textarea
-            id="bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell people about yourself"
-            maxLength={160}
-            rows={3}
-            className="mt-1 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 outline-none focus:border-purple-600"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            {160 - bio.length} characters remaining
-          </p>
-        </div>
+        <Field
+          label="Bio"
+          value={form.bio}
+          maxLength={160}
+          rows={3}
+          onChange={(v) => setForm((f) => ({ ...f, bio: v }))}
+          placeholder="Tell people about yourself"
+          showCharCount
+        />
+
+        <Field
+          label="Website"
+          value={form.url}
+          maxLength={200}
+          onChange={(v) => setForm((f) => ({ ...f, url: v }))}
+          placeholder="https://yourwebsite.com"
+        />
+
+        <Field
+          label="Location"
+          value={form.location}
+          maxLength={80}
+          onChange={(v) => setForm((f) => ({ ...f, location: v }))}
+          placeholder="Where you're based"
+        />
+
+        <Field
+          label="City"
+          value={form.city}
+          maxLength={80}
+          onChange={(v) => setForm((f) => ({ ...f, city: v }))}
+          placeholder="Your hyperlocal channel"
+        />
 
         <button
           onClick={handleSave}
@@ -175,15 +238,69 @@ export default function SettingsPage() {
         {message && (
           <p
             className={`rounded-lg px-3 py-2 text-sm ${
-              message.includes("saved")
+              message.startsWith("Saved")
                 ? "bg-green-900/30 text-green-400"
-                : "bg-red-900/30 text-red-400"
+                : message === "No changes to save"
+                  ? "bg-gray-800 text-gray-300"
+                  : "bg-red-900/30 text-red-400"
             }`}
           >
             {message}
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  maxLength?: number;
+  rows?: number;
+  showCharCount?: boolean;
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  rows,
+  showCharCount,
+}: FieldProps) {
+  const inputClass =
+    "mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 outline-none focus:border-purple-600";
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-300">{label}</label>
+      {rows ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          rows={rows}
+          className={`${inputClass} resize-none`}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className={inputClass}
+        />
+      )}
+      {showCharCount && maxLength !== undefined && (
+        <p className="mt-1 text-xs text-gray-500">
+          {maxLength - value.length} characters remaining
+        </p>
+      )}
     </div>
   );
 }
