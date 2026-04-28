@@ -315,3 +315,50 @@ export async function signAndBookmark(args: {
 
   return res.json();
 }
+
+/**
+ * Tombstone a tweet via TWEET_REMOVE (type 2). The hub keeps the
+ * original row but feed reads skip any tweet with a corresponding
+ * REMOVE by the same author, so the tweet disappears across the UI
+ * after the next refresh.
+ */
+export async function signAndRemoveTweet(args: {
+  tid: number;
+  targetHash: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const data = {
+    type: 2, // TWEET_REMOVE
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body: { target_hash: args.targetHash },
+  };
+
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Tweet remove failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}

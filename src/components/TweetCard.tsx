@@ -1,10 +1,13 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import LikeButton from "./LikeButton";
 import BookmarkButton from "./BookmarkButton";
 import RetweetButton from "./RetweetButton";
 import TipButton from "./TipButton";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { signAndRemoveTweet } from "@/lib/messages";
 
 interface TweetCardProps {
   text: string;
@@ -15,6 +18,19 @@ interface TweetCardProps {
   myTid?: number;
   replyCount?: number;
   embeds?: string[];
+  /**
+   * Called after a successful TWEET_REMOVE so the parent can drop the
+   * tweet from its local list. The hub-side filter hides it on
+   * subsequent reads, but optimistically clearing here keeps the UI
+   * snappy.
+   */
+  onDeleted?: (hash: string) => void;
+}
+
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
 }
 
 export default function TweetCard({
@@ -26,11 +42,39 @@ export default function TweetCard({
   myTid,
   replyCount,
   embeds,
+  onDeleted,
 }: TweetCardProps) {
   const date = new Date(timestamp * 1000);
   const timeAgo = getTimeAgo(date);
   const displayName = username ? `${username}.tribe` : `TID #${tid}`;
   const initial = username ? username[0].toUpperCase() : String(tid);
+  const isOwn = myTid !== undefined && myTid === tid;
+  const [hidden, setHidden] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = useCallback(async () => {
+    if (!hash || !isOwn || deleting) return;
+    if (!window.confirm("Delete this tweet? This can't be undone.")) return;
+    const appKey = loadAppKey();
+    if (!appKey) return;
+    setDeleting(true);
+    setHidden(true);
+    try {
+      await signAndRemoveTweet({
+        tid,
+        targetHash: hash,
+        signingKeySecret: appKey,
+      });
+      onDeleted?.(hash);
+    } catch (err) {
+      console.error("Tweet delete failed:", err);
+      setHidden(false);
+    } finally {
+      setDeleting(false);
+    }
+  }, [hash, isOwn, deleting, tid, onDeleted]);
+
+  if (hidden) return null;
 
   return (
     <div className="border-b border-gray-200 px-4 py-4 transition-colors hover:bg-gray-50">
@@ -59,6 +103,18 @@ export default function TweetCard({
             >
               {timeAgo}
             </span>
+            {isOwn && hash && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Delete tweet"
+                className="ml-auto text-sm text-gray-400 hover:text-red-500 disabled:opacity-50"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+              </button>
+            )}
           </div>
           <p className="mt-1 whitespace-pre-wrap text-gray-800">{text}</p>
 
