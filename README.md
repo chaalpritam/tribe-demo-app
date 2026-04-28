@@ -91,6 +91,25 @@ cp .env.example .env.local    # edit with your hub/ER URLs
 pnpm dev                      # http://localhost:3002
 ```
 
+The dev server binds to `0.0.0.0`, so any device on the same Wi-Fi can reach it as `http://<hostname>.local:3002` (e.g. `http://chaals-macbook-air.local:3002`). Useful for testing in iOS Safari without rebuilding.
+
+### Cross-device development on one Wi-Fi
+
+Run the protocol on one machine (e.g. a Mac mini) and develop the frontend from another (e.g. a MacBook Air) — no port-forwarding, no Tailscale.
+
+```bash
+# On the machine running the stack:
+tribe start
+tribe share          # prints the URLs to copy
+
+# On the dev laptop:
+tribe link http://yourmac.local:4000   # writes .env.local
+pnpm dev                               # restart picks up the env
+# then open http://localhost:3002 — it talks to yourmac's hub + ER
+```
+
+`tribe share` prefers the Bonjour `*.local` hostname over the LAN IP because it survives DHCP changes and resolves natively on macOS + iOS. iPhone Safari can open the URL directly. See the [main README](../Readme.md#cross-device-development-on-one-wi-fi) for the full walkthrough.
+
 ## Tech Stack
 
 - Next.js 16 / React 19
