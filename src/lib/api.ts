@@ -124,41 +124,96 @@ export async function fetchFollowers(tid: string) {
   return res.json();
 }
 
-export async function registerDmKey(tid: string, x25519Pubkey: string) {
-  await hubFetch("/v1/dm/register-key", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tid, x25519Pubkey }),
-  });
-}
-
+/**
+ * Look up another TID's registered x25519 public key so we can encrypt
+ * to them. Hub returns the field as `x25519_pubkey` (snake_case);
+ * normalize to a flat string here.
+ */
 export async function getDmKey(tid: string): Promise<string | null> {
   const res = await hubFetch(`/v1/dm/key/${tid}`);
   if (!res.ok) return null;
   const data = await res.json();
-  return data.x25519Pubkey ?? null;
+  return data.x25519_pubkey ?? data.x25519Pubkey ?? null;
 }
 
-export async function sendDm(senderTid: string, recipientTid: string, encryptedText: string, nonce: string) {
-  const res = await hubFetch("/v1/dm/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ senderTid, recipientTid, encryptedText, nonce }),
-  });
-  if (!res.ok) throw new Error("Failed to send DM");
-  return res.json();
+interface ConversationRow {
+  id: string;
+  other_tid: string;
+  other_username: string | null;
+  message_count: number;
+  last_message_at: string | null;
 }
 
-export async function fetchConversations(tid: string) {
+/**
+ * Hub returns `{ conversations: [{ id, peer_tid, last_message_at }] }`.
+ * Normalize peer_tid → other_tid so the UI's existing types keep
+ * working. message_count + other_username aren't on the hub response;
+ * the page renders defaults for them.
+ */
+export async function fetchConversations(
+  tid: string,
+): Promise<{ conversations: ConversationRow[] }> {
   const res = await hubFetch(`/v1/dm/conversations/${tid}`);
   if (!res.ok) return { conversations: [] };
-  return res.json();
+  const raw = (await res.json()) as {
+    conversations?: Array<{
+      id: string;
+      peer_tid: number | string;
+      last_message_at: string | null;
+    }>;
+  };
+  const conversations = (raw.conversations ?? []).map((c) => ({
+    id: c.id,
+    other_tid: String(c.peer_tid),
+    other_username: null,
+    message_count: 0,
+    last_message_at: c.last_message_at,
+  }));
+  return { conversations };
 }
 
-export async function fetchDmMessages(conversationId: string) {
-  const res = await hubFetch(`/v1/dm/messages/${conversationId}`);
+interface DmMessageRow {
+  id: string;
+  sender_tid: string;
+  sender_username: string | null;
+  encrypted_text: string;
+  nonce: string;
+  created_at: string;
+}
+
+/**
+ * Hub requires a `?tid=` query param so it can verify the caller is a
+ * conversation participant before returning messages. Normalize the
+ * hub's row shape (ciphertext, timestamp) to what the UI expects
+ * (encrypted_text, created_at) so the messages page doesn't drift
+ * between repos.
+ */
+export async function fetchDmMessages(
+  conversationId: string,
+  tid: string,
+): Promise<{ messages: DmMessageRow[] }> {
+  const res = await hubFetch(
+    `/v1/dm/messages/${conversationId}?tid=${encodeURIComponent(tid)}`,
+  );
   if (!res.ok) return { messages: [] };
-  return res.json();
+  const raw = (await res.json()) as {
+    messages?: Array<{
+      hash: string;
+      sender_tid: number | string;
+      ciphertext: string;
+      nonce: string;
+      timestamp: string;
+    }>;
+  };
+  const messages = (raw.messages ?? []).map((m) => ({
+    id: m.hash,
+    sender_tid: String(m.sender_tid),
+    sender_username: null,
+    encrypted_text: m.ciphertext,
+    nonce: m.nonce,
+    created_at: m.timestamp,
+  }));
+  return { messages };
 }
 
 export async function fetchFollowing(tid: string) {
