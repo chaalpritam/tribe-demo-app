@@ -145,10 +145,9 @@ interface ConversationRow {
 }
 
 /**
- * Hub returns `{ conversations: [{ id, peer_tid, last_message_at }] }`.
- * Normalize peer_tid → other_tid so the UI's existing types keep
- * working. message_count + other_username aren't on the hub response;
- * the page renders defaults for them.
+ * Hub returns conversations with peer_tid + peer_username (joined from
+ * the tids table) + message_count (subquery). Normalize the snake_case
+ * peer_* names to other_* so the page's existing types keep working.
  */
 export async function fetchConversations(
   tid: string,
@@ -159,14 +158,16 @@ export async function fetchConversations(
     conversations?: Array<{
       id: string;
       peer_tid: number | string;
+      peer_username: string | null;
       last_message_at: string | null;
+      message_count: number | null;
     }>;
   };
   const conversations = (raw.conversations ?? []).map((c) => ({
     id: c.id,
     other_tid: String(c.peer_tid),
-    other_username: null,
-    message_count: 0,
+    other_username: c.peer_username ?? null,
+    message_count: c.message_count ?? 0,
     last_message_at: c.last_message_at,
   }));
   return { conversations };
