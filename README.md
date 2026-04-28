@@ -95,20 +95,22 @@ The dev server binds to `0.0.0.0`, so any device on the same Wi-Fi can reach it 
 
 ### Cross-device development on one Wi-Fi
 
-Run the protocol on one machine (e.g. a Mac mini) and develop the frontend from another (e.g. a MacBook Air) — no port-forwarding, no Tailscale.
+Run the protocol on one machine (e.g. a Mac mini) and develop the frontend from another (e.g. a MacBook Air) — no port-forwarding, no Tailscale, **and no tribe install needed on the dev laptop**.
 
 ```bash
-# On the machine running the stack:
+# On the machine running the stack — `tribe share` prints the URLs:
 tribe start
-tribe share          # prints the URLs to copy
+tribe share
 
-# On the dev laptop:
-tribe link http://yourmac.local:4000   # writes .env.local
-pnpm dev                               # restart picks up the env
-# then open http://localhost:3002 — it talks to yourmac's hub + ER
+# On the dev laptop — just paste two env vars into .env.local:
+cat > .env.local <<EOF
+NEXT_PUBLIC_HUB_URL=http://yourmac.local:4000
+NEXT_PUBLIC_ER_SERVER_URL=http://yourmac.local:3003
+EOF
+pnpm dev   # http://localhost:3002 — local UI, remote hub + ER
 ```
 
-`tribe share` prefers the Bonjour `*.local` hostname over the LAN IP because it survives DHCP changes and resolves natively on macOS + iOS. iPhone Safari can open the URL directly. See the [main README](../Readme.md#cross-device-development-on-one-wi-fi) for the full walkthrough.
+`tribe share` prefers the Bonjour `*.local` hostname over the LAN IP because it survives DHCP changes and resolves natively on macOS + iOS. iPhone Safari can open the URL directly. If you do also have tribe installed on the dev laptop, `tribe link http://yourmac.local:4000` writes that same `.env.local` for you. See the [main README](../Readme.md#cross-device-development-on-one-wi-fi) for the full walkthrough including troubleshooting.
 
 ## Tech Stack
 
