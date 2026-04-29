@@ -139,7 +139,7 @@ export default function SettingsPage() {
 
   if (!connected) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">Connect your wallet to edit your profile</p>
       </div>
     );
@@ -147,7 +147,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
       </div>
     );

@@ -12,7 +12,7 @@ export default function TweetPageWrapper() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
         </div>
       }
@@ -71,7 +71,7 @@ function TweetPage() {
 
   if (!hash) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">No tweet specified</p>
       </div>
     );
@@ -79,7 +79,7 @@ function TweetPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
       </div>
     );
@@ -87,7 +87,7 @@ function TweetPage() {
 
   if (!tweet) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">Tweet not found</p>
       </div>
     );

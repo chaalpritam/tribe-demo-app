@@ -77,7 +77,7 @@ export default function Home() {
   // Not connected - hero section
   if (!connected) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center px-4">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500 text-3xl font-bold text-white">
           T
         </div>
@@ -120,7 +120,7 @@ export default function Home() {
   // Loading TID
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
       </div>
     );
@@ -129,7 +129,7 @@ export default function Home() {
   // No TID - registration flow (start from beginning)
   if (tid === null) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
+      <div className="flex min-h-screen items-center justify-center px-4">
         <RegisterIdentity onRegistered={handleRegistered} />
       </div>
     );
@@ -138,7 +138,7 @@ export default function Home() {
   // Has TID but no app key - resume registration at app key step
   if (!hasAppKey) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
+      <div className="flex min-h-screen items-center justify-center px-4">
         <RegisterIdentity
           onRegistered={handleRegistered}
           initialStep="appkey"
@@ -148,26 +148,23 @@ export default function Home() {
     );
   }
 
-  // Main feed view
+  // Main feed view: feed centered, profile rail on xl+
   return (
-    <div className="flex min-h-[calc(100vh-64px)] gap-6 px-4 py-6">
-      {/* Sidebar */}
-      <aside className="hidden w-72 shrink-0 lg:block">
-        <div className="sticky top-20">
+    <div className="mx-auto flex max-w-5xl gap-6 px-4 py-6">
+      <div className="min-w-0 flex-1 max-w-2xl">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
+          <Feed myTid={tid} refreshKey={refreshKey} />
+        </div>
+      </div>
+      <aside className="hidden w-72 shrink-0 xl:block">
+        <div className="sticky top-4">
           <ProfileSidebar
             tid={tid.toString()}
             walletAddress={publicKey?.toBase58() ?? ""}
           />
         </div>
       </aside>
-
-      {/* Main content */}
-      <div className="min-w-0 flex-1">
-        <div className="rounded-xl border border-gray-200 bg-white">
-          <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
-          <Feed myTid={tid} refreshKey={refreshKey} />
-        </div>
-      </div>
     </div>
   );
 }

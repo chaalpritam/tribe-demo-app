@@ -38,8 +38,8 @@ export default function MessagesPageWrapper() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
         </div>
       }
     >
@@ -205,7 +205,7 @@ function MessagesPage() {
 
   if (!connected) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">Connect your wallet to use messages</p>
       </div>
     );
@@ -223,14 +223,14 @@ function MessagesPage() {
     const recipientName = newTid ? `TID #${newTid}` : `TID #${otherTid}`;
 
     return (
-      <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "calc(100vh - 64px)" }}>
-        <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
-          <Link href="/messages" className="text-gray-400 hover:text-white">
+      <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "100vh" }}>
+        <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
+          <Link href="/messages" className="text-gray-500 hover:text-gray-900">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h2 className="font-semibold text-white">{recipientName}</h2>
+          <h2 className="font-semibold text-gray-900">{recipientName}</h2>
           {!otherPubkey && (
             <span className="text-xs text-yellow-500">No encryption key registered</span>
           )}
@@ -239,7 +239,7 @@ function MessagesPage() {
         <div className="flex-1 overflow-y-auto py-4">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
             </div>
           ) : messages.length === 0 ? (
             <p className="text-center text-gray-500">No messages yet. Say hi!</p>
@@ -291,7 +291,7 @@ function MessagesPage() {
                       <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                         <div
                           className={`max-w-xs rounded-2xl px-4 py-2 ${
-                            isMe ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-200"
+                            isMe ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           <p className="text-sm">{text}</p>
@@ -314,11 +314,11 @@ function MessagesPage() {
         </div>
 
         {error && (
-          <p className="border-t border-red-900/40 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+          <p className="border-t border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </p>
         )}
-        <div className="flex gap-2 border-t border-gray-800 pt-3">
+        <div className="flex gap-2 border-t border-gray-200 pt-3">
           <input
             type="text"
             value={messageInput}
@@ -326,12 +326,12 @@ function MessagesPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={otherPubkey ? "Type a message..." : "Recipient has no DM key"}
             disabled={!otherPubkey}
-            className="flex-1 rounded-full border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600 disabled:opacity-50"
+            className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={!messageInput.trim() || sending || !otherPubkey}
-            className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+            className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
             Send
           </button>
@@ -344,11 +344,11 @@ function MessagesPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Messages</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
         {myTid && (
           <button
             onClick={() => setShowCreateGroup(true)}
-            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-600"
           >
             + Group
           </button>
@@ -357,12 +357,12 @@ function MessagesPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
         </div>
       ) : conversations.length === 0 && groups.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">
           No conversations yet. Start one from a user&apos;s profile, or
-          create a group with <span className="text-purple-400">+ Group</span>.
+          create a group with <span className="text-blue-600">+ Group</span>.
         </p>
       ) : (
         <>
@@ -371,19 +371,19 @@ function MessagesPage() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Groups
               </p>
-              <div className="rounded-xl border border-gray-800 bg-gray-900">
+              <div className="rounded-xl border border-gray-200 bg-white">
                 {groups.map((g) => (
                   <Link
                     key={g.id}
                     href={`/messages?group=${encodeURIComponent(g.id)}`}
-                    className="flex items-center justify-between border-b border-gray-800 px-4 py-3 transition-colors hover:bg-gray-800/50"
+                    className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600/20 text-sm font-semibold text-green-400">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-600">
                         {g.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-white">{g.name}</p>
+                        <p className="font-semibold text-gray-900">{g.name}</p>
                         <p className="text-xs text-gray-500">
                           {g.member_count} {g.member_count === 1 ? "member" : "members"}
                         </p>
@@ -401,7 +401,7 @@ function MessagesPage() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Direct messages
               </p>
-              <div className="rounded-xl border border-gray-800 bg-gray-900">
+              <div className="rounded-xl border border-gray-200 bg-white">
                 {conversations.map((conv) => {
                   const name = conv.other_username
                     ? `${conv.other_username}.tribe`
@@ -410,14 +410,14 @@ function MessagesPage() {
                     <Link
                       key={conv.id}
                       href={`/messages?conv=${conv.id}`}
-                      className="flex items-center justify-between border-b border-gray-800 px-4 py-3 transition-colors hover:bg-gray-800/50"
+                      className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600/20 text-sm font-semibold text-purple-400">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
                           {conv.other_username?.[0]?.toUpperCase() ?? conv.other_tid}
                         </div>
                         <div>
-                          <p className="font-semibold text-white">{name}</p>
+                          <p className="font-semibold text-gray-900">{name}</p>
                           <p className="text-xs text-gray-500">
                             {conv.message_count} messages
                           </p>
@@ -554,15 +554,15 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
   }, [group, text, sending, memberKeys, myTid]);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "calc(100vh - 64px)" }}>
-      <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
-        <Link href="/messages" className="text-gray-400 hover:text-white">
+    <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "100vh" }}>
+      <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
+        <Link href="/messages" className="text-gray-500 hover:text-gray-900">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-white">{group?.name ?? "Group"}</h2>
+          <h2 className="font-semibold text-gray-900">{group?.name ?? "Group"}</h2>
           {group && (
             <p className="text-xs text-gray-500">
               {group.members.length} members ·{" "}
@@ -575,7 +575,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
       <div className="flex-1 overflow-y-auto py-4">
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
           </div>
         ) : messages.length === 0 ? (
           <p className="text-center text-gray-500">No messages yet.</p>
@@ -593,7 +593,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
                 <div key={msg.hash} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-xs rounded-2xl px-4 py-2 ${
-                      isMe ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-200"
+                      isMe ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {!isMe && (
@@ -614,11 +614,11 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
       </div>
 
       {error && (
-        <p className="border-t border-red-900/40 bg-red-950/40 px-3 py-2 text-xs text-red-300">
+        <p className="border-t border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
           {error}
         </p>
       )}
-      <div className="flex gap-2 border-t border-gray-800 pt-3">
+      <div className="flex gap-2 border-t border-gray-200 pt-3">
         <input
           type="text"
           value={text}
@@ -626,12 +626,12 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Type a message..."
           disabled={memberKeys.size === 0}
-          className="flex-1 rounded-full border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600 disabled:opacity-50"
+          className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500 disabled:opacity-50"
         />
         <button
           onClick={handleSend}
           disabled={!text.trim() || sending || memberKeys.size === 0}
-          className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
         >
           Send
         </button>
@@ -704,27 +704,27 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">New group</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
+          <h2 className="text-lg font-bold text-gray-900">New group</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900" aria-label="Close">✕</button>
         </div>
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-400">Group name</label>
+            <label className="block text-xs font-medium text-gray-500">Group name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Trip planning"
               maxLength={80}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Member TIDs <span className="text-gray-600">(comma-separated)</span>
             </label>
             <input
@@ -732,7 +732,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
               value={memberInput}
               onChange={(e) => setMemberInput(e.target.value)}
               placeholder="42, 87, 12"
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 font-mono text-sm text-gray-900 outline-none focus:border-blue-500"
             />
             <p className="mt-1 text-xs text-gray-500">
               You&apos;ll be added automatically. Each member needs a registered DM
@@ -748,7 +748,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-300 hover:bg-gray-100"
             >
               Cancel
             </button>
@@ -756,7 +756,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create group"}
             </button>

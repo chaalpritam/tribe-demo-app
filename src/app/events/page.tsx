@@ -42,7 +42,7 @@ export default function EventsPage() {
 
   if (!connected) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-gray-500">Connect your wallet to view events</p>
       </div>
     );
