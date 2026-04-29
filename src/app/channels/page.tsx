@@ -3,12 +3,14 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchChannels, fetchChannelFeed } from "@/lib/api";
+import { fetchChannels, fetchChannelFeed, fetchJoinedChannels } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import TweetComposer from "@/components/TweetComposer";
 import {
   signAndCreateChannel,
+  signAndJoinChannel,
+  signAndLeaveChannel,
   ChannelKind,
   type ChannelKindValue,
 } from "@/lib/messages";
@@ -66,6 +68,10 @@ function ChannelsPage() {
   const [myTid, setMyTid] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
+  // Set of channel ids the current user has joined. Refreshed alongside
+  // the channel list and after each Join/Leave click so the row stays
+  // in sync without a full reload.
+  const [joined, setJoined] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
@@ -81,8 +87,16 @@ function ChannelsPage() {
           const data = await fetchChannelFeed(channelId);
           setTweets(data?.tweets ?? []);
         } else {
-          const data = await fetchChannels();
+          const [data, joinedData] = await Promise.all([
+            fetchChannels(),
+            myTid !== null
+              ? fetchJoinedChannels(String(myTid))
+              : Promise.resolve({ channels: [] }),
+          ]);
           setChannels(data?.channels ?? []);
+          setJoined(
+            new Set((joinedData.channels ?? []).map((c) => c.id)),
+          );
         }
       } catch {
         setError("Failed to load channel data");
@@ -91,7 +105,65 @@ function ChannelsPage() {
       }
     }
     load();
-  }, [channelId, refreshKey]);
+  }, [channelId, refreshKey, myTid]);
+
+  const handleToggleMembership = useCallback(
+    async (id: string) => {
+      if (myTid === null) return;
+      const appKey = loadAppKey();
+      if (!appKey) return;
+      const wasJoined = joined.has(id);
+      // Optimistic flip + local member-count adjust; revert on failure.
+      setJoined((prev) => {
+        const next = new Set(prev);
+        if (wasJoined) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setChannels((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                member_count: Math.max(
+                  0,
+                  (c.member_count ?? 0) + (wasJoined ? -1 : 1),
+                ),
+              }
+            : c,
+        ),
+      );
+      try {
+        if (wasJoined) {
+          await signAndLeaveChannel({ tid: myTid, channelId: id, signingKeySecret: appKey });
+        } else {
+          await signAndJoinChannel({ tid: myTid, channelId: id, signingKeySecret: appKey });
+        }
+      } catch (err) {
+        console.error("Channel membership toggle failed:", err);
+        setJoined((prev) => {
+          const next = new Set(prev);
+          if (wasJoined) next.add(id);
+          else next.delete(id);
+          return next;
+        });
+        setChannels((prev) =>
+          prev.map((c) =>
+            c.id === id
+              ? {
+                  ...c,
+                  member_count: Math.max(
+                    0,
+                    (c.member_count ?? 0) + (wasJoined ? 1 : -1),
+                  ),
+                }
+              : c,
+          ),
+        );
+      }
+    },
+    [myTid, joined],
+  );
 
   if (!connected) {
     return (
@@ -214,45 +286,68 @@ function ChannelsPage() {
         </div>
       ) : (
         <div className="mt-6 space-y-2">
-          {channels.map((ch) => (
-            <button
-              key={ch.id}
-              onClick={() => router.push(`/channels?id=${encodeURIComponent(ch.id)}`)}
-              className="flex w-full items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors hover:bg-gray-800/50"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-white">
-                    {ch.name ? ch.name : `#${ch.id}`}
-                  </p>
-                  {ch.name && (
-                    <span className="text-xs text-gray-500">#{ch.id}</span>
+          {channels.map((ch) => {
+            const isJoined = joined.has(ch.id);
+            return (
+              <div
+                key={ch.id}
+                className="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:bg-gray-800/50"
+              >
+                <button
+                  onClick={() => router.push(`/channels?id=${encodeURIComponent(ch.id)}`)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-white">
+                      {ch.name ? ch.name : `#${ch.id}`}
+                    </p>
+                    {ch.name && (
+                      <span className="text-xs text-gray-500">#{ch.id}</span>
+                    )}
+                    {ch.kind === 2 && (
+                      <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-green-400">
+                        city
+                      </span>
+                    )}
+                    {isJoined && (
+                      <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-purple-300">
+                        joined
+                      </span>
+                    )}
+                  </div>
+                  {ch.description && (
+                    <p className="mt-0.5 truncate text-xs text-gray-500">
+                      {ch.description}
+                    </p>
                   )}
-                  {ch.kind === 2 && (
-                    <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-green-400">
-                      city
-                    </span>
-                  )}
-                </div>
-                {ch.description && (
-                  <p className="mt-0.5 truncate text-xs text-gray-500">
-                    {ch.description}
+                  <p className="mt-1 text-xs text-gray-500">
+                    {ch.tweet_count} {ch.tweet_count === 1 ? "post" : "posts"}
+                    {ch.member_count > 0 && (
+                      <> · {ch.member_count} {ch.member_count === 1 ? "member" : "members"}</>
+                    )}
+                    {ch.last_tweet_at && (
+                      <> · last activity {getTimeAgo(new Date(ch.last_tweet_at))}</>
+                    )}
                   </p>
+                </button>
+                {myTid !== null && ch.id !== "general" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleMembership(ch.id);
+                    }}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                      isJoined
+                        ? "border border-gray-700 text-gray-300 hover:border-red-500 hover:text-red-400"
+                        : "bg-purple-600 text-white hover:bg-purple-700"
+                    }`}
+                  >
+                    {isJoined ? "Leave" : "Join"}
+                  </button>
                 )}
-                <p className="mt-1 text-xs text-gray-500">
-                  {ch.tweet_count} {ch.tweet_count === 1 ? "post" : "posts"}
-                  {ch.member_count > 0 && (
-                    <> · {ch.member_count} {ch.member_count === 1 ? "member" : "members"}</>
-                  )}
-                </p>
               </div>
-              {ch.last_tweet_at && (
-                <span className="ml-3 shrink-0 text-xs text-gray-500">
-                  {getTimeAgo(new Date(ch.last_tweet_at))}
-                </span>
-              )}
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 

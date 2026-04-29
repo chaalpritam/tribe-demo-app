@@ -112,6 +112,17 @@ export async function fetchChannelFeed(channelId: string) {
   return res.json();
 }
 
+/**
+ * Channels a TID has joined (CHANNEL_JOIN messages with no later
+ * matching CHANNEL_LEAVE). Used by the channels list to flip rows to
+ * "Leave" and to reflect the user's joined-set everywhere it shows.
+ */
+export async function fetchJoinedChannels(tid: string): Promise<{ channels: { id: string }[] }> {
+  const res = await hubFetch(`/v1/channels/member/${tid}`);
+  if (!res.ok) return { channels: [] };
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await hubFetch(`/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);
