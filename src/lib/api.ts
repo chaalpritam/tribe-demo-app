@@ -123,6 +123,90 @@ export async function fetchJoinedChannels(tid: string): Promise<{ channels: { id
   return res.json();
 }
 
+// ── Polls ───────────────────────────────────────────────────────────
+
+export interface PollRow {
+  id: string;
+  creator_tid: string;
+  question: string;
+  options: string[];
+  expires_at: string | null;
+  channel_id: string | null;
+  created_at: string;
+}
+
+export async function fetchPolls(): Promise<{ polls: PollRow[] }> {
+  const res = await hubFetch("/v1/polls");
+  if (!res.ok) return { polls: [] };
+  return res.json();
+}
+
+export async function fetchPoll(
+  id: string,
+): Promise<(PollRow & { tally: Record<string, number> }) | null> {
+  const res = await hubFetch(`/v1/polls/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchUserPollVote(
+  pollId: string,
+  tid: string,
+): Promise<{ option_index: number } | null> {
+  const res = await hubFetch(
+    `/v1/polls/${encodeURIComponent(pollId)}/vote/${tid}`,
+  );
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// ── Events ──────────────────────────────────────────────────────────
+
+export interface EventRow {
+  id: string;
+  creator_tid: string;
+  title: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  location_text: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  channel_id: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
+export async function fetchEvents(
+  upcomingOnly = false,
+): Promise<{ events: EventRow[] }> {
+  const url = upcomingOnly ? "/v1/events?upcoming=true" : "/v1/events";
+  const res = await hubFetch(url);
+  if (!res.ok) return { events: [] };
+  return res.json();
+}
+
+export async function fetchEvent(
+  id: string,
+): Promise<
+  (EventRow & { rsvp_counts: Record<"yes" | "no" | "maybe", number> }) | null
+> {
+  const res = await hubFetch(`/v1/events/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchUserRsvp(
+  eventId: string,
+  tid: string,
+): Promise<{ status: "yes" | "no" | "maybe" } | null> {
+  const res = await hubFetch(
+    `/v1/events/${encodeURIComponent(eventId)}/rsvp/${tid}`,
+  );
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await hubFetch(`/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);

@@ -558,6 +558,21 @@ async function submitChannelEnvelope(args: {
   signingKeySecret: Uint8Array;
   errorLabel: string;
 }): Promise<{ hash: string }> {
+  return submitTypedEnvelope(args);
+}
+
+/**
+ * Generic signed-envelope publisher. The various signAndX helpers all
+ * share the same JSON+blake3+ed25519+dataB64 path; this is the one
+ * place to maintain it. type is the MessageType integer.
+ */
+async function submitTypedEnvelope(args: {
+  type: number;
+  tid: number;
+  body: Record<string, unknown>;
+  signingKeySecret: Uint8Array;
+  errorLabel: string;
+}): Promise<{ hash: string }> {
   const data = {
     type: args.type,
     tid: args.tid,
@@ -591,4 +606,107 @@ async function submitChannelEnvelope(args: {
   }
 
   return res.json();
+}
+
+/**
+ * Create a poll via POLL_ADD (type 16). Hub validates poll_id against
+ * `^[a-z0-9-]{1,64}$`, requires 2–10 options, and rejects votes for an
+ * out-of-range option_index. expires_at is unix seconds (optional).
+ */
+export async function signAndCreatePoll(args: {
+  tid: number;
+  pollId: string;
+  question: string;
+  options: string[];
+  expiresAtUnix?: number;
+  channelId?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    poll_id: args.pollId,
+    question: args.question,
+    options: args.options,
+  };
+  if (args.expiresAtUnix) body.expires_at = args.expiresAtUnix;
+  if (args.channelId) body.channel_id = args.channelId;
+  return submitTypedEnvelope({
+    type: 16,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Poll create",
+  });
+}
+
+/** Vote on a poll via POLL_VOTE (type 17). Re-voting overwrites the prior choice. */
+export async function signAndVotePoll(args: {
+  tid: number;
+  pollId: string;
+  optionIndex: number;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitTypedEnvelope({
+    type: 17,
+    tid: args.tid,
+    body: { poll_id: args.pollId, option_index: args.optionIndex },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Poll vote",
+  });
+}
+
+/**
+ * Create an event via EVENT_ADD (type 18). starts_at / ends_at are
+ * unix seconds. lat/lng + location_text are optional metadata.
+ */
+export async function signAndCreateEvent(args: {
+  tid: number;
+  eventId: string;
+  title: string;
+  description?: string;
+  startsAtUnix: number;
+  endsAtUnix?: number;
+  locationText?: string;
+  latitude?: number;
+  longitude?: number;
+  channelId?: string;
+  imageUrl?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    event_id: args.eventId,
+    title: args.title,
+    starts_at: args.startsAtUnix,
+  };
+  if (args.description) body.description = args.description;
+  if (args.endsAtUnix) body.ends_at = args.endsAtUnix;
+  if (args.locationText) body.location_text = args.locationText;
+  if (typeof args.latitude === "number") body.latitude = args.latitude;
+  if (typeof args.longitude === "number") body.longitude = args.longitude;
+  if (args.channelId) body.channel_id = args.channelId;
+  if (args.imageUrl) body.image_url = args.imageUrl;
+  return submitTypedEnvelope({
+    type: 18,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Event create",
+  });
+}
+
+/** RSVP to an event via EVENT_RSVP (type 19). status: yes / no / maybe. */
+export type RsvpStatus = "yes" | "no" | "maybe";
+
+export async function signAndRsvpEvent(args: {
+  tid: number;
+  eventId: string;
+  status: RsvpStatus;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitTypedEnvelope({
+    type: 19,
+    tid: args.tid,
+    body: { event_id: args.eventId, status: args.status },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Event RSVP",
+  });
 }
