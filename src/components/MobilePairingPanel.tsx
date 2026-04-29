@@ -16,6 +16,21 @@ interface PairingPayload {
 
 const LAN_PLACEHOLDER = "YOUR-LAN-IP";
 
+// localStorage holds tweetnacl's 64-byte secretKey (seed || pubkey).
+// tribe-ios's AppKey.restore wants just the 32-byte ed25519 seed, so
+// strip the trailing public key before encoding it into the QR.
+function seedFromStoredSecret(b64: string): string | null {
+  try {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const seed =
+      bytes.length === 64 ? bytes.subarray(0, 32) : bytes.length === 32 ? bytes : null;
+    if (!seed) return null;
+    return btoa(String.fromCharCode(...seed));
+  } catch {
+    return null;
+  }
+}
+
 // localhost works for the desktop but not for a phone on the same Wi-Fi —
 // surface a placeholder the user has to fill in so a stale localhost
 // URL never makes it into the QR.
@@ -67,11 +82,13 @@ export default function MobilePairingPanel() {
   const payload: PairingPayload | null = useMemo(() => {
     if (!tid || !appKeyB64) return null;
     if (!mobileHubUrl || mobileHubUrl.includes(LAN_PLACEHOLDER)) return null;
+    const seedB64 = seedFromStoredSecret(appKeyB64);
+    if (!seedB64) return null;
     return {
       v: 1,
       kind: "tribe-pair",
       tid,
-      appKeySeedB64: appKeyB64,
+      appKeySeedB64: seedB64,
       hubUrl: mobileHubUrl.trim(),
     };
   }, [tid, appKeyB64, mobileHubUrl]);
