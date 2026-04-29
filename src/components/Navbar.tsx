@@ -68,6 +68,18 @@ export default function Navbar() {
             Events
           </Link>
           <Link
+            href="/tasks"
+            className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+          >
+            Tasks
+          </Link>
+          <Link
+            href="/crowdfunds"
+            className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+          >
+            Crowdfunds
+          </Link>
+          <Link
             href="/messages"
             className="text-sm text-gray-600 transition-colors hover:text-gray-900"
           >
