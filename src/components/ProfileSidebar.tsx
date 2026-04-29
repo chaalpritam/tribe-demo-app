@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchUser,
@@ -10,6 +11,19 @@ import {
   type KarmaSummary,
 } from "@/lib/api";
 import { erFollow } from "@/lib/er-client";
+
+const WalletButton = dynamic(
+  async () => {
+    const { WalletMultiButton } = await import(
+      "@solana/wallet-adapter-react-ui"
+    );
+    return { default: WalletMultiButton };
+  },
+  {
+    ssr: false,
+    loading: () => <div className="h-10 w-full rounded-lg bg-blue-500/40" />,
+  }
+);
 
 interface ProfileSidebarProps {
   tid: string;
@@ -110,6 +124,20 @@ export default function ProfileSidebar({
 
   return (
     <div className="space-y-4">
+      {/* Wallet card — sits above profile details */}
+      <div className="rounded-xl border border-gray-200 bg-white p-3">
+        <WalletButton
+          style={{
+            backgroundColor: "#3b82f6",
+            borderRadius: "0.5rem",
+            fontSize: "0.875rem",
+            height: "2.5rem",
+            width: "100%",
+            justifyContent: "center",
+          }}
+        />
+      </div>
+
       {/* Profile card */}
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center gap-3">

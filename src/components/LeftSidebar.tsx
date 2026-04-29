@@ -3,25 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import dynamic from "next/dynamic";
 import { fetchUnreadCount } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { onFeedUpdate, subscribeTid } from "@/lib/ws";
-
-const WalletButton = dynamic(
-  async () => {
-    const { WalletMultiButton } = await import(
-      "@solana/wallet-adapter-react-ui"
-    );
-    return { default: WalletMultiButton };
-  },
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-10 w-full rounded-lg bg-blue-500/40" />
-    ),
-  }
-);
 
 interface NavItem {
   href: string;
@@ -273,7 +257,7 @@ export default function LeftSidebar() {
       <aside className="sticky top-0 hidden h-screen shrink-0 border-r border-gray-200 bg-white md:flex md:w-[72px] md:flex-col xl:w-64">
         <Link
           href="/"
-          className="flex items-center gap-2 px-4 pt-5 xl:px-6"
+          className="flex items-center gap-2 px-4 py-5 xl:px-6"
           aria-label="Tribe home"
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500 text-base font-bold text-white">
@@ -284,29 +268,7 @@ export default function LeftSidebar() {
           </span>
         </Link>
 
-        <div className="px-3 pt-4 pb-3 xl:px-4">
-          <div className="hidden xl:block">
-            <WalletButton
-              style={{
-                backgroundColor: "#3b82f6",
-                borderRadius: "0.5rem",
-                fontSize: "0.875rem",
-                height: "2.5rem",
-                width: "100%",
-                justifyContent: "center",
-              }}
-            />
-          </div>
-          <Link
-            href="/settings"
-            className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white xl:hidden"
-            title="Wallet / settings"
-          >
-            T
-          </Link>
-        </div>
-
-        <nav className="flex-1 space-y-1 border-t border-gray-100 px-2 pt-3 pb-4 xl:px-3">
+        <nav className="flex-1 space-y-1 px-2 pb-4 xl:px-3">
           {NAV_ITEMS.map((item) => {
             const active = isActive(item);
             const badge =
