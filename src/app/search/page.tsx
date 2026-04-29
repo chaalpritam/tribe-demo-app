@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   searchTweets,
   searchUsers,
@@ -90,8 +90,10 @@ interface CrowdfundRow {
 }
 
 function SearchPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get("q") ?? "";
+  const [input, setInput] = useState(query);
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [channels, setChannels] = useState<ChannelRow[]>([]);
@@ -99,13 +101,24 @@ function SearchPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [crowdfunds, setCrowdfunds] = useState<CrowdfundRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [myTid, setMyTid] = useState<number | null>(null);
+
+  useEffect(() => {
+    setInput(query);
+  }, [query]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
     if (stored) setMyTid(parseInt(stored, 10));
   }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (trimmed.length < 2) return;
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
 
   useEffect(() => {
     if (query.length < 2) {
@@ -165,11 +178,53 @@ function SearchPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900">
-        Search: &ldquo;{query}&rdquo;
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900">Search</h1>
 
-      {loading ? (
+      <form onSubmit={handleSubmit} className="mt-4">
+        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 focus-within:border-gray-900">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            className="h-5 w-5 shrink-0 text-gray-500"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            autoFocus
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Search people, tweets, channels, polls…"
+            className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
+          />
+          {input && (
+            <button
+              type="button"
+              onClick={() => {
+                setInput("");
+                router.push("/search");
+              }}
+              className="text-gray-400 hover:text-gray-700"
+              aria-label="Clear"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {input.trim().length === 1 && (
+          <p className="mt-1 px-2 text-xs text-gray-500">
+            Type at least 2 characters to search.
+          </p>
+        )}
+      </form>
+
+      {!query ? (
+        <p className="mt-8 text-center text-sm text-gray-500">
+          Find people, tweets, channels, polls, events, tasks, and crowdfunds.
+        </p>
+      ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
