@@ -59,6 +59,41 @@ export function getMediaUrl(hash: string): string {
   return `${getHubBaseUrl()}/v1/media/${hash}`;
 }
 
+/**
+ * Canonical reference form for hub-hosted media. Stored verbatim in
+ * embeds and profile fields so that a hub-IP change (DHCP renewal,
+ * moving the stack to a new machine, swapping `tribe link` targets)
+ * doesn't strand every image at the old address. The render side
+ * resolves these against the *current* NEXT_PUBLIC_HUB_URL via
+ * resolveMediaUrl.
+ */
+export function mediaRef(hash: string): string {
+  return `media:${hash}`;
+}
+
+/**
+ * Render-time helper: turn whatever was stored in an embed / pfpUrl
+ * into a real URL for an <img src>. Handles three input shapes:
+ *
+ *   1. `media:<hash>` — the canonical form going forward
+ *   2. `http(s)://…/v1/media/<hash>` — legacy absolute URL stored by
+ *      pre-`mediaRef` versions of the app. We extract the hash and
+ *      re-resolve so the IP burnt into the URL when the tweet was
+ *      first composed gets replaced with the current hub.
+ *   3. Any other URL — passed through as-is (external links etc.)
+ */
+export function resolveMediaUrl(
+  value: string | null | undefined,
+): string | null {
+  if (!value) return null;
+  if (value.startsWith("media:")) {
+    return getMediaUrl(value.slice("media:".length));
+  }
+  const match = value.match(/\/v1\/media\/([0-9a-fA-F]{64})/);
+  if (match) return getMediaUrl(match[1]);
+  return value;
+}
+
 export async function searchTweets(query: string) {
   const res = await hubFetch(`/v1/search?q=${encodeURIComponent(query)}&limit=30`);
   if (!res.ok) throw new Error(`Search failed: ${res.statusText}`);

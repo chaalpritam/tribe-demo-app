@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { signAndPublishTweet } from "@/lib/messages";
-import { uploadMedia, getMediaUrl, fetchChannels } from "@/lib/api";
+import { uploadMedia, getMediaUrl, mediaRef, fetchChannels } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 
 const MAX_CHARS = 320;
@@ -133,8 +133,11 @@ export default function TweetComposer({
         c.charCodeAt(0)
       );
 
-      // Embeds are media URLs
-      const embeds = mediaHashes.map((h) => getMediaUrl(h));
+      // Store hub-relative media references (media:<hash>) so the URL
+      // resolves against whatever NEXT_PUBLIC_HUB_URL is current at
+      // render time. Storing absolute URLs here would burn in the
+      // composer-time hub IP and break every image after a hub move.
+      const embeds = mediaHashes.map((h) => mediaRef(h));
 
       // Replies & channel-page tweets inherit their channel from props;
       // top-level tweets use whatever the picker has selected (defaulting

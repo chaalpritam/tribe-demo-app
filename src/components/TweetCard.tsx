@@ -8,6 +8,7 @@ import RetweetButton from "./RetweetButton";
 import TipButton from "./TipButton";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { signAndRemoveTweet } from "@/lib/messages";
+import { resolveMediaUrl } from "@/lib/api";
 
 interface TweetCardProps {
   text: string;
@@ -118,21 +119,30 @@ export default function TweetCard({
           </div>
           <p className="mt-1 whitespace-pre-wrap text-gray-800">{text}</p>
 
-          {/* Embedded images */}
-          {embeds && embeds.length > 0 && (
-            <div className={`mt-2 grid gap-1 ${embeds.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-              {embeds.filter(e => e.includes("/media/")).map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Attached image ${i + 1}`}
-                  className="w-full rounded-lg object-cover"
-                  style={{ maxHeight: embeds.length === 1 ? "400px" : "200px" }}
-                  loading="lazy"
-                />
-              ))}
-            </div>
-          )}
+          {/* Embedded images — accept both new media:<hash> refs and
+              legacy absolute URLs. resolveMediaUrl always returns a
+              URL pointed at the *current* hub, so image rendering
+              survives hub IP changes. */}
+          {(() => {
+            const imageUrls = (embeds ?? [])
+              .map((e) => resolveMediaUrl(e))
+              .filter((u): u is string => !!u && u.includes("/v1/media/"));
+            if (imageUrls.length === 0) return null;
+            return (
+              <div className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                {imageUrls.map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`Attached image ${i + 1}`}
+                    className="w-full rounded-lg object-cover"
+                    style={{ maxHeight: imageUrls.length === 1 ? "400px" : "200px" }}
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            );
+          })()}
 
           {hash && (
             <div className="mt-2 flex items-center gap-5">

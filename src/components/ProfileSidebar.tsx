@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchUser, fetchFollowing } from "@/lib/api";
+import { fetchUser, fetchFollowing, resolveMediaUrl } from "@/lib/api";
 import { erFollow } from "@/lib/er-client";
 
 interface ProfileSidebarProps {
@@ -33,9 +33,15 @@ export default function ProfileSidebar({
       try {
         const user = await fetchUser(tid);
         setUsername(user?.username ?? null);
-        setDisplayName(user?.display_name ?? null);
-        setBio(user?.bio ?? null);
-        setAvatarUrl(user?.avatar_url ?? null);
+        // The hub returns USER_DATA_ADD-derived fields under
+        // `user.profile` keyed by protocol field name (displayName,
+        // bio, pfpUrl). Older code looked for snake_case fields that
+        // never existed in the response, so display name / avatar /
+        // bio were always null.
+        const profile = (user?.profile ?? {}) as Record<string, string>;
+        setDisplayName(profile.displayName ?? null);
+        setBio(profile.bio ?? null);
+        setAvatarUrl(profile.pfpUrl ?? null);
         setFollowersCount(
           Number(user?.followers_count ?? user?.follower_count ?? 0)
         );
@@ -94,7 +100,7 @@ export default function ProfileSidebar({
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center gap-3">
           {avatarUrl ? (
-            <img src={avatarUrl} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
+            <img src={resolveMediaUrl(avatarUrl) ?? ""} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white">
               {username ? username[0].toUpperCase() : tid}

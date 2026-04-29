@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { fetchUser, uploadMedia, getMediaUrl } from "@/lib/api";
+import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 
 interface ProfileForm {
@@ -77,7 +77,9 @@ export default function SettingsPage() {
       setUploading(true);
       try {
         const result = await uploadMedia(file);
-        setForm((f) => ({ ...f, pfpUrl: getMediaUrl(result.hash) }));
+        // Store the canonical reference, not the absolute URL — see
+        // mediaRef in lib/api for the rationale (hub IP change safety).
+        setForm((f) => ({ ...f, pfpUrl: mediaRef(result.hash) }));
       } catch {
         setMessage("Failed to upload avatar");
       } finally {
@@ -164,7 +166,7 @@ export default function SettingsPage() {
           <div className="mt-2 flex items-center gap-4">
             {form.pfpUrl ? (
               <img
-                src={form.pfpUrl}
+                src={resolveMediaUrl(form.pfpUrl) ?? ""}
                 alt="Avatar"
                 className="h-16 w-16 rounded-full object-cover"
               />
