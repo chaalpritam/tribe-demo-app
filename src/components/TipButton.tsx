@@ -126,7 +126,7 @@ export default function TipButton({
 
       {open && (
         <div className="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
-          <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+          <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-gray-500">
             Tip in SOL
           </p>
           {PRESETS_SOL.map((sol) => (
@@ -137,7 +137,7 @@ export default function TipButton({
               className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium text-gray-800 hover:bg-amber-50 disabled:opacity-50"
             >
               <span>{sol} SOL</span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500">
                 ≈ {sol * LAMPORTS_PER_SOL} lamports
               </span>
             </button>

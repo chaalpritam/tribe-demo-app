@@ -148,14 +148,14 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-6">
-      <h1 className="text-2xl font-bold text-white">Edit Profile</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
 
       <div className="mt-6 space-y-4">
         {/* Avatar */}
@@ -171,11 +171,11 @@ export default function SettingsPage() {
                 className="h-16 w-16 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-600 text-xl font-bold text-white">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-xl font-bold text-white">
                 {myTid}
               </div>
             )}
-            <label className="cursor-pointer rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
+            <label className="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
               {uploading ? "Uploading..." : "Change avatar"}
               <input
                 type="file"
@@ -232,7 +232,7 @@ export default function SettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-lg bg-purple-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Profile"}
         </button>
@@ -241,10 +241,10 @@ export default function SettingsPage() {
           <p
             className={`rounded-lg px-3 py-2 text-sm ${
               message.startsWith("Saved")
-                ? "bg-green-900/30 text-green-400"
+                ? "bg-emerald-50 text-emerald-700"
                 : message === "No changes to save"
-                  ? "bg-gray-800 text-gray-300"
-                  : "bg-red-900/30 text-red-400"
+                  ? "bg-gray-100 text-gray-300"
+                  : "bg-red-50 text-red-700"
             }`}
           >
             {message}
@@ -275,7 +275,7 @@ function Field({
   showCharCount,
 }: FieldProps) {
   const inputClass =
-    "mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white placeholder-gray-500 outline-none focus:border-purple-600";
+    "mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900";
   return (
     <div>
       <label className="block text-sm font-medium text-gray-300">{label}</label>

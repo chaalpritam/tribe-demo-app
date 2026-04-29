@@ -260,7 +260,7 @@ export default function LeftSidebar() {
           className="flex items-center gap-2 px-4 py-5 xl:px-6"
           aria-label="Tribe home"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500 text-base font-bold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-base font-bold text-white">
             T
           </div>
           <span className="hidden text-xl font-bold tracking-tight text-gray-900 xl:block">
@@ -287,7 +287,7 @@ export default function LeftSidebar() {
                 <span className="relative flex h-6 w-6 items-center justify-center text-gray-900">
                   {item.icon(active)}
                   {badge > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-semibold text-white">
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-semibold text-white">
                       {badge > 9 ? "9+" : badge}
                     </span>
                   )}
@@ -320,7 +320,7 @@ export default function LeftSidebar() {
               <span className="relative">
                 {item.icon(active)}
                 {badge > 0 && (
-                  <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-semibold text-white">
+                  <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-semibold text-white">
                     {badge > 9 ? "9+" : badge}
                   </span>
                 )}

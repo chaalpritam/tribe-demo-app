@@ -61,7 +61,7 @@ export default function FollowButton({
       disabled={loading}
       className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
         following
-          ? "border border-gray-600 text-gray-300 hover:border-red-500 hover:text-red-400"
+          ? "border border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600"
           : "bg-white text-black hover:bg-gray-200"
       }`}
     >

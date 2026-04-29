@@ -39,7 +39,7 @@ export default function MessagesPageWrapper() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       }
     >
@@ -232,14 +232,14 @@ function MessagesPage() {
           </Link>
           <h2 className="font-semibold text-gray-900">{recipientName}</h2>
           {!otherPubkey && (
-            <span className="text-xs text-yellow-500">No encryption key registered</span>
+            <span className="text-xs text-amber-700">No encryption key registered</span>
           )}
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
             </div>
           ) : messages.length === 0 ? (
             <p className="text-center text-gray-500">No messages yet. Say hi!</p>
@@ -291,7 +291,7 @@ function MessagesPage() {
                       <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                         <div
                           className={`max-w-xs rounded-2xl px-4 py-2 ${
-                            isMe ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
+                            isMe ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           <p className="text-sm">{text}</p>
@@ -326,12 +326,12 @@ function MessagesPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={otherPubkey ? "Type a message..." : "Recipient has no DM key"}
             disabled={!otherPubkey}
-            className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500 disabled:opacity-50"
+            className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={!messageInput.trim() || sending || !otherPubkey}
-            className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+            className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
           >
             Send
           </button>
@@ -348,7 +348,7 @@ function MessagesPage() {
         {myTid && (
           <button
             onClick={() => setShowCreateGroup(true)}
-            className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
           >
             + Group
           </button>
@@ -357,7 +357,7 @@ function MessagesPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : conversations.length === 0 && groups.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">
@@ -413,7 +413,7 @@ function MessagesPage() {
                       className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-blue-600">
                           {conv.other_username?.[0]?.toUpperCase() ?? conv.other_tid}
                         </div>
                         <div>
@@ -575,7 +575,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
       <div className="flex-1 overflow-y-auto py-4">
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
           </div>
         ) : messages.length === 0 ? (
           <p className="text-center text-gray-500">No messages yet.</p>
@@ -593,7 +593,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
                 <div key={msg.hash} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-xs rounded-2xl px-4 py-2 ${
-                      isMe ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
+                      isMe ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {!isMe && (
@@ -626,12 +626,12 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Type a message..."
           disabled={memberKeys.size === 0}
-          className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500 disabled:opacity-50"
+          className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900 disabled:opacity-50"
         />
         <button
           onClick={handleSend}
           disabled={!text.trim() || sending || memberKeys.size === 0}
-          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+          className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Send
         </button>
@@ -719,7 +719,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
               onChange={(e) => setName(e.target.value)}
               placeholder="Trip planning"
               maxLength={80}
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
@@ -732,7 +732,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
               value={memberInput}
               onChange={(e) => setMemberInput(e.target.value)}
               placeholder="42, 87, 12"
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 font-mono text-sm text-gray-900 outline-none focus:border-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 font-mono text-sm text-gray-900 outline-none focus:border-gray-900"
             />
             <p className="mt-1 text-xs text-gray-500">
               You&apos;ll be added automatically. Each member needs a registered DM
@@ -741,7 +741,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
           )}
 
           <div className="flex gap-2 pt-2">
@@ -756,7 +756,7 @@ function CreateGroupModal({ myTid, onClose, onCreated }: CreateGroupModalProps) 
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create group"}
             </button>

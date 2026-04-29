@@ -39,18 +39,79 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   crowdfund_pledge: "pledged to your crowdfund",
 };
 
-const TYPE_ICONS: Record<NotificationType, string> = {
-  follow: "👤",
-  reaction: "❤️",
-  reply: "💬",
-  tip: "💸",
-  mention: "@",
-  poll_vote: "📊",
-  event_rsvp: "📅",
-  task_claim: "🛠",
-  task_complete: "✅",
-  crowdfund_pledge: "🪙",
-};
+function NotifIcon({ type }: { type: NotificationType }) {
+  const common = "h-4 w-4";
+  switch (type) {
+    case "follow":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21a8 8 0 0 1 16 0" strokeLinecap="round" />
+        </svg>
+      );
+    case "reaction":
+      return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={common}>
+          <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />
+        </svg>
+      );
+    case "reply":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z" strokeLinejoin="round" />
+        </svg>
+      );
+    case "tip":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15" strokeLinecap="round" />
+        </svg>
+      );
+    case "mention":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M16 12v1a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" strokeLinecap="round" />
+        </svg>
+      );
+    case "poll_vote":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <rect x="4" y="11" width="3" height="9" rx="1" />
+          <rect x="10.5" y="7" width="3" height="13" rx="1" />
+          <rect x="17" y="14" width="3" height="6" rx="1" />
+        </svg>
+      );
+    case "event_rsvp":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <rect x="4" y="6" width="16" height="14" rx="2" />
+          <path d="M4 10h16M9 4v4M15 4v4" strokeLinecap="round" />
+        </svg>
+      );
+    case "task_claim":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <path d="M5 7l2 2 4-4M5 17l2 2 4-4M14 7h6M14 17h6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "task_complete":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8 12 3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "crowdfund_pledge":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" strokeLinecap="round" />
+        </svg>
+      );
+  }
+}
 
 // Tweet-anchored types link to /tweet?hash=…; everything else stays on the
 // notifications screen (no dedicated detail routes for poll/event/task/etc).
@@ -121,7 +182,7 @@ export default function NotificationsPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : error ? (
         <div className="py-12 text-center">
@@ -150,10 +211,12 @@ export default function NotificationsPage() {
               <div
                 key={`${n.type}-${n.actor_tid}-${n.target_hash ?? ""}-${n.created_at}-${idx}`}
                 className={`flex items-start gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 ${
-                  unread ? "bg-blue-50/40" : ""
+                  unread ? "bg-gray-50" : ""
                 }`}
               >
-                <span className="mt-0.5 text-lg">{TYPE_ICONS[n.type]}</span>
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                  <NotifIcon type={n.type} />
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-800">
                     <Link
@@ -182,7 +245,7 @@ export default function NotificationsPage() {
                   </p>
                 </div>
                 {unread && (
-                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
+                  <div className="mt-1 h-2 w-2 rounded-full bg-gray-900" />
                 )}
               </div>
             );

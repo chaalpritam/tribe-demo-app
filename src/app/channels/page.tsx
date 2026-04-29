@@ -26,7 +26,7 @@ export default function ChannelsPageWrapper() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       }
     >
@@ -179,7 +179,7 @@ function ChannelsPage() {
       <div className="mx-auto max-w-2xl px-4 py-6">
         <button
           onClick={() => router.push("/channels")}
-          className="mb-4 flex items-center gap-2 text-sm text-gray-400 hover:text-white"
+          className="mb-4 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -187,9 +187,9 @@ function ChannelsPage() {
           All channels
         </button>
 
-        <h1 className="text-2xl font-bold text-white">#{channelId}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">#{channelId}</h1>
 
-        <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900">
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white">
           {myTid && (
             <TweetComposer
               tid={myTid}
@@ -201,14 +201,14 @@ function ChannelsPage() {
 
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
             </div>
           ) : error ? (
             <div className="py-8 text-center">
               <p className="text-gray-500">{error}</p>
               <button
                 onClick={() => setRefreshKey((k) => k + 1)}
-                className="mt-2 text-sm text-purple-400 hover:underline"
+                className="mt-2 text-sm text-blue-600 hover:underline"
               >
                 Retry
               </button>
@@ -247,15 +247,15 @@ function ChannelsPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Channels</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">Channels</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Browse or create topic-based channels
           </p>
         </div>
         {myTid !== null && (
           <button
             onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
+            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
           >
             + New
           </button>
@@ -264,14 +264,14 @@ function ChannelsPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : error ? (
         <div className="py-12 text-center">
           <p className="text-gray-500">{error}</p>
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
-            className="mt-2 text-sm text-purple-400 hover:underline"
+            className="mt-2 text-sm text-blue-600 hover:underline"
           >
             Retry
           </button>
@@ -280,7 +280,7 @@ function ChannelsPage() {
         <div className="mt-8 text-center">
           <p className="text-gray-500">No channels yet.</p>
           <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-purple-400">+ New</span> to create one,
+            Click <span className="text-blue-600">+ New</span> to create one,
             or post a tweet with a channel.
           </p>
         </div>
@@ -291,21 +291,21 @@ function ChannelsPage() {
             return (
               <div
                 key={ch.id}
-                className="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:bg-gray-800/50"
+                className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
               >
                 <button
                   onClick={() => router.push(`/channels?id=${encodeURIComponent(ch.id)}`)}
                   className="min-w-0 flex-1 text-left"
                 >
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-gray-900">
                       {ch.name ? ch.name : `#${ch.id}`}
                     </p>
                     {ch.name && (
                       <span className="text-xs text-gray-500">#{ch.id}</span>
                     )}
                     {ch.kind === 2 && (
-                      <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-green-400">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
                         city
                       </span>
                     )}
@@ -338,8 +338,8 @@ function ChannelsPage() {
                     }}
                     className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                       isJoined
-                        ? "border border-gray-700 text-gray-300 hover:border-red-500 hover:text-red-400"
-                        : "bg-purple-600 text-white hover:bg-purple-700"
+                        ? "border border-gray-200 text-gray-700 hover:border-red-300 hover:text-red-600"
+                        : "bg-gray-900 text-white hover:bg-gray-800"
                     }`}
                   >
                     {isJoined ? "Leave" : "Join"}
@@ -454,13 +454,13 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">New channel</h2>
+          <h2 className="text-lg font-bold text-gray-900">New channel</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-white"
+            className="text-gray-500 hover:text-gray-900"
             aria-label="Close"
           >
             ✕
@@ -469,7 +469,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Channel id <span className="text-gray-600">(slug, a–z 0–9 hyphens)</span>
             </label>
             <input
@@ -478,24 +478,24 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
               onChange={(e) => setChannelId(e.target.value)}
               placeholder="solana-devs"
               maxLength={64}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 font-mono text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">Name</label>
+            <label className="block text-xs font-medium text-gray-500">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Solana Developers"
               maxLength={80}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Description <span className="text-gray-600">(optional)</span>
             </label>
             <textarea
@@ -503,12 +503,12 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               maxLength={300}
-              className="mt-1 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full resize-none rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">Kind</label>
+            <label className="block text-xs font-medium text-gray-500">Kind</label>
             <div className="mt-1 flex gap-2">
               <button
                 type="button"
@@ -516,7 +516,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   kind === ChannelKind.INTEREST
                     ? "border-purple-500 bg-purple-500/20 text-purple-200"
-                    : "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    : "border-gray-200 bg-gray-100 text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 Interest
@@ -526,8 +526,8 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
                 onClick={() => setKind(ChannelKind.CITY)}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   kind === ChannelKind.CITY
-                    ? "border-green-500 bg-green-500/20 text-green-200"
-                    : "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    ? "border-gray-900 bg-gray-100 text-gray-900"
+                    : "border-gray-200 bg-gray-100 text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 City
@@ -538,7 +538,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
           {kind === ChannelKind.CITY && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-gray-400">
+                <label className="block text-xs font-medium text-gray-500">
                   Latitude
                 </label>
                 <input
@@ -547,11 +547,11 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
                   value={latitude}
                   onChange={(e) => setLatitude(e.target.value)}
                   placeholder="37.7749"
-                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400">
+                <label className="block text-xs font-medium text-gray-500">
                   Longitude
                 </label>
                 <input
@@ -560,14 +560,14 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
                   value={longitude}
                   onChange={(e) => setLongitude(e.target.value)}
                   placeholder="-122.4194"
-                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
                 />
               </div>
             </div>
           )}
 
           {error && (
-            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
               {error}
             </p>
           )}
@@ -576,7 +576,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-300 hover:bg-gray-100"
             >
               Cancel
             </button>
@@ -584,7 +584,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Create channel"}
             </button>

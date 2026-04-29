@@ -157,7 +157,7 @@ export default function RegisterIdentity({
             className={`h-1 flex-1 rounded-full ${
               i <=
               ["register", "username", "appkey"].indexOf(step)
-                ? "bg-blue-500"
+                ? "bg-gray-900"
                 : "bg-gray-200"
             }`}
           />
@@ -173,7 +173,7 @@ export default function RegisterIdentity({
           <button
             onClick={handleRegisterTid}
             disabled={loading}
-            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
+            className="mt-4 w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Registering..." : "Register TID"}
           </button>
@@ -197,19 +197,19 @@ export default function RegisterIdentity({
               onChange={(e) => setUsernameInput(e.target.value.toLowerCase())}
               placeholder="username"
               maxLength={20}
-              className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 outline-none focus:border-gray-900 focus:ring-1 focus:ring-blue-500"
             />
             <span className="text-gray-500">.tribe</span>
           </div>
           {usernameInput && !isValidUsername && (
-            <p className="mt-1 text-xs text-yellow-600">
+            <p className="mt-1 text-xs text-amber-700">
               3-20 chars, lowercase letters, numbers, underscores only
             </p>
           )}
           <button
             onClick={handleRegisterUsername}
             disabled={loading || !isValidUsername}
-            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
+            className="mt-4 w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Registering..." : "Register Username"}
           </button>
@@ -230,7 +230,7 @@ export default function RegisterIdentity({
           <button
             onClick={handleAddAppKey}
             disabled={loading}
-            className="mt-4 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-600 disabled:opacity-50 shadow-sm"
+            className="mt-4 w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50 shadow-sm"
           >
             {loading ? "Setting up..." : "Generate Signing Key"}
           </button>

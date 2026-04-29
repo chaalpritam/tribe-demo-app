@@ -53,15 +53,15 @@ export default function CrowdfundsPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Crowdfunds</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">Crowdfunds</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Community-funded campaigns
           </p>
         </div>
         {myTid !== null && (
           <button
             onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
           >
             + New
           </button>
@@ -70,13 +70,13 @@ export default function CrowdfundsPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : campaigns.length === 0 ? (
         <div className="mt-8 text-center">
           <p className="text-gray-500">No active crowdfunds.</p>
           <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-purple-400">+ New</span> to start one.
+            Click <span className="text-blue-600">+ New</span> to start one.
           </p>
         </div>
       ) : (
@@ -133,10 +133,10 @@ function CrowdfundCard({ campaign, onPledgeClick }: CrowdfundCardProps) {
     n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-white">{campaign.title}</p>
+          <p className="font-semibold text-gray-900">{campaign.title}</p>
           {campaign.description && (
             <p className="mt-1 text-sm text-gray-300">{campaign.description}</p>
           )}
@@ -153,16 +153,16 @@ function CrowdfundCard({ campaign, onPledgeClick }: CrowdfundCardProps) {
       </div>
 
       <div className="mt-3">
-        <div className="h-2 overflow-hidden rounded-full bg-gray-800">
+        <div className="h-2 overflow-hidden rounded-full bg-gray-100">
           <div
             className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
         <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="text-white">
+          <span className="text-gray-900">
             <span className="font-semibold">{fmt(raised)}</span>
-            <span className="text-gray-400"> / {fmt(goal)} {campaign.currency}</span>
+            <span className="text-gray-500"> / {fmt(goal)} {campaign.currency}</span>
           </span>
           <span className="text-gray-500">
             {Math.round(pct)}% · {campaign.pledger_count} {campaign.pledger_count === 1 ? "pledger" : "pledgers"}
@@ -173,7 +173,7 @@ function CrowdfundCard({ campaign, onPledgeClick }: CrowdfundCardProps) {
       {!deadlinePassed && (
         <button
           onClick={onPledgeClick}
-          className="mt-3 w-full rounded-lg bg-purple-600 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+          className="mt-3 w-full rounded-lg bg-gray-900 py-2 text-sm font-semibold text-white hover:bg-gray-800"
         >
           Pledge
         </button>
@@ -247,27 +247,27 @@ function CreateCrowdfundModal({ tid, onClose, onCreated }: CreateCrowdfundModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">New crowdfund</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
+          <h2 className="text-lg font-bold text-gray-900">New crowdfund</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900" aria-label="Close">✕</button>
         </div>
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-400">Title</label>
+            <label className="block text-xs font-medium text-gray-500">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Fund the new community garden"
               maxLength={120}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Description <span className="text-gray-600">(optional)</span>
             </label>
             <textarea
@@ -275,56 +275,56 @@ function CreateCrowdfundModal({ tid, onClose, onCreated }: CreateCrowdfundModalP
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               maxLength={1000}
-              className="mt-1 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full resize-none rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-gray-400">Goal</label>
+              <label className="block text-xs font-medium text-gray-500">Goal</label>
               <input
                 type="text"
                 inputMode="decimal"
                 value={goalAmount}
                 onChange={(e) => setGoalAmount(e.target.value)}
                 placeholder="500"
-                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400">Currency</label>
+              <label className="block text-xs font-medium text-gray-500">Currency</label>
               <input
                 type="text"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
                 placeholder="USD"
                 maxLength={20}
-                className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Deadline <span className="text-gray-600">(optional)</span>
             </label>
             <input
               type="datetime-local"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
           )}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-300 hover:bg-gray-100"
             >
               Cancel
             </button>
@@ -332,7 +332,7 @@ function CreateCrowdfundModal({ tid, onClose, onCreated }: CreateCrowdfundModalP
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Launch"}
             </button>
@@ -386,41 +386,41 @@ function PledgeModal({ tid, campaign, onClose, onPledged }: PledgeModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Pledge</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
+          <h2 className="text-lg font-bold text-gray-900">Pledge</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900" aria-label="Close">✕</button>
         </div>
-        <p className="mt-2 text-sm text-gray-400">to <span className="text-white">{campaign.title}</span></p>
+        <p className="mt-2 text-sm text-gray-500">to <span className="text-gray-900">{campaign.title}</span></p>
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-400">Amount ({campaign.currency})</label>
+            <label className="block text-xs font-medium text-gray-500">Amount ({campaign.currency})</label>
             <input
               type="text"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="50"
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
               autoFocus
             />
           </div>
-          <p className="rounded-lg bg-yellow-900/20 px-3 py-2 text-xs text-yellow-300">
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
             This records an off-chain pledge. The actual fund movement
             isn&apos;t handled by this envelope — use the on-chain
             crowdfund-registry program for real settlement.
           </p>
 
           {error && (
-            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
           )}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-300 hover:bg-gray-100"
             >
               Cancel
             </button>
@@ -428,7 +428,7 @@ function PledgeModal({ tid, campaign, onClose, onPledged }: PledgeModalProps) {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {submitting ? "Pledging…" : "Confirm pledge"}
             </button>

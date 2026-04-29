@@ -88,7 +88,7 @@ export default function BookmarkButton({
       onClick={handleToggle}
       disabled={loading}
       className={`text-sm transition-colors ${
-        bookmarked ? "text-yellow-500" : "text-gray-500 hover:text-yellow-400"
+        bookmarked ? "text-amber-700" : "text-gray-500 hover:text-yellow-400"
       }`}
       title={bookmarked ? "Remove bookmark" : "Bookmark"}
     >

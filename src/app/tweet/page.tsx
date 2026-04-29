@@ -13,7 +13,7 @@ export default function TweetPageWrapper() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       }
     >
@@ -80,7 +80,7 @@ function TweetPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ function TweetPage() {
       {/* Back button */}
       <button
         onClick={() => router.back()}
-        className="mb-4 flex items-center gap-2 text-sm text-gray-400 hover:text-white"
+        className="mb-4 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -112,7 +112,7 @@ function TweetPage() {
       </button>
 
       {/* Main tweet */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900">
+      <div className="rounded-xl border border-gray-200 bg-white">
         <TweetCard
           text={tweet.text}
           tid={Number(tweet.tid)}
@@ -136,10 +136,10 @@ function TweetPage() {
       {/* Replies */}
       {replies.length > 0 && (
         <div className="mt-4">
-          <h3 className="mb-2 text-sm font-semibold text-gray-400">
+          <h3 className="mb-2 text-sm font-semibold text-gray-500">
             {replies.length} {replies.length === 1 ? "Reply" : "Replies"}
           </h3>
-          <div className="rounded-xl border border-gray-800 bg-gray-900">
+          <div className="rounded-xl border border-gray-200 bg-white">
             {replies.map((reply, i) => {
               const ts =
                 typeof reply.timestamp === "string"

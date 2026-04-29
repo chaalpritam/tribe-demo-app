@@ -153,7 +153,7 @@ export {
  * icon. base64-encoded so the wallet adapter library can embed it.
  */
 function browserWalletIcon(): `data:image/svg+xml;base64,${string}` {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#3b82f6" stroke="#3b82f6"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20" stroke="white"/></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#18181b" stroke="#18181b"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20" stroke="white"/></svg>`;
   const b64 = typeof btoa === "function" ? btoa(svg) : Buffer.from(svg).toString("base64");
   return `data:image/svg+xml;base64,${b64}`;
 }

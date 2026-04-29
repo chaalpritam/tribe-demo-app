@@ -21,7 +21,7 @@ const WalletButton = dynamic(
   },
   {
     ssr: false,
-    loading: () => <div className="h-10 w-full rounded-lg bg-blue-500/40" />,
+    loading: () => <div className="h-10 w-full rounded-lg bg-gray-200" />,
   }
 );
 
@@ -128,7 +128,7 @@ export default function ProfileSidebar({
       <div className="rounded-xl border border-gray-200 bg-white p-3">
         <WalletButton
           style={{
-            backgroundColor: "#3b82f6",
+            backgroundColor: "#18181b",
             borderRadius: "0.5rem",
             fontSize: "0.875rem",
             height: "2.5rem",
@@ -144,7 +144,7 @@ export default function ProfileSidebar({
           {avatarUrl ? (
             <img src={resolveMediaUrl(avatarUrl) ?? ""} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-lg font-bold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-900 text-lg font-bold text-white">
               {username ? username[0].toUpperCase() : tid}
             </div>
           )}
@@ -208,18 +208,18 @@ export default function ProfileSidebar({
             value={followInput}
             onChange={(e) => setFollowInput(e.target.value)}
             placeholder="Enter TID"
-            className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-blue-500"
+            className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900"
           />
           <button
             onClick={handleFollow}
             disabled={followLoading || !followInput.trim()}
-            className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+            className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
           >
             {followLoading ? "..." : "Follow"}
           </button>
         </div>
         {followError && (
-          <p className="mt-1 text-xs text-red-400">{followError}</p>
+          <p className="mt-1 text-xs text-red-600">{followError}</p>
         )}
       </div>
 
@@ -233,7 +233,7 @@ export default function ProfileSidebar({
                 key={f.following_tid}
                 className="flex items-center gap-2 text-sm"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs text-blue-600">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-blue-600">
                   {f.username
                     ? f.username[0].toUpperCase()
                     : f.following_tid}

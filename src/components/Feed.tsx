@@ -67,7 +67,7 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
   if (loading && tweets.length === 0) {
     return (
       <div className="flex justify-center py-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
       </div>
     );
   }
@@ -78,7 +78,7 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
         <p className="text-gray-500">{error}</p>
         <button
           onClick={loadTweets}
-          className="mt-2 text-sm text-purple-400 hover:underline"
+          className="mt-2 text-sm text-blue-600 hover:underline"
         >
           Retry
         </button>

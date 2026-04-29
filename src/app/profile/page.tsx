@@ -38,7 +38,7 @@ export default function ProfilePageWrapper() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       }
     >
@@ -112,7 +112,7 @@ function ProfilePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
       </div>
     );
   }
@@ -127,10 +127,10 @@ function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       {/* Profile header */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-600 text-2xl font-bold text-white">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-2xl font-bold text-white">
               {initial}
             </div>
             <div>
@@ -154,7 +154,7 @@ function ProfilePage() {
             <FollowButton myTid={myTid} targetTid={tid} />
           )}
           {isMe && (
-            <span className="rounded-full border border-gray-600 px-3 py-1 text-xs text-gray-400">
+            <span className="rounded-full border border-gray-600 px-3 py-1 text-xs text-gray-500">
               Your profile
             </span>
           )}
@@ -162,33 +162,33 @@ function ProfilePage() {
 
         <div className="mt-4 flex gap-6">
           <div>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-gray-900">
               {Number(user?.following_count ?? 0)}
             </p>
             <p className="text-sm text-gray-500">Following</p>
           </div>
           <div>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-gray-900">
               {Number(user?.followers_count ?? 0)}
             </p>
             <p className="text-sm text-gray-500">Followers</p>
           </div>
           <div>
-            <p className="text-lg font-semibold text-white">{tweets.length}</p>
+            <p className="text-lg font-semibold text-gray-900">{tweets.length}</p>
             <p className="text-sm text-gray-500">Tweets</p>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="mt-4 flex border-b border-gray-800">
+      <div className="mt-4 flex border-b border-gray-200">
         {(["tweets", "followers", "following"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-3 text-center text-sm font-semibold transition-colors ${
               tab === t
-                ? "border-b-2 border-purple-600 text-white"
+                ? "border-b-2 border-gray-900 text-white"
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -198,7 +198,7 @@ function ProfilePage() {
       </div>
 
       {/* Tab content */}
-      <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900">
+      <div className="mt-2 rounded-xl border border-gray-200 bg-white">
         {tab === "tweets" && (
           <>
             {tweets.length === 0 ? (
@@ -327,14 +327,14 @@ function UserRow({
   return (
     <a
       href={`/profile?tid=${tid}`}
-      className="flex items-center justify-between border-b border-gray-800 px-4 py-3 transition-colors hover:bg-gray-800/50"
+      className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-600/20 text-xs font-semibold text-purple-400">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900/20 text-xs font-semibold text-blue-600">
           {initial}
         </div>
         <div>
-          <p className="text-sm font-semibold text-white">{displayName}</p>
+          <p className="text-sm font-semibold text-gray-900">{displayName}</p>
           <p className="text-xs text-gray-500">
             {address.slice(0, 4)}...{address.slice(-4)}
           </p>

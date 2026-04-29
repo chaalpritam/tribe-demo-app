@@ -20,7 +20,7 @@ const WalletButton = dynamic(
   },
   {
     ssr: false,
-    loading: () => <div className="mt-10 h-10 w-40 rounded-lg bg-blue-500/40" />,
+    loading: () => <div className="mt-10 h-10 w-40 rounded-lg bg-gray-200" />,
   }
 );
 
@@ -92,7 +92,7 @@ export default function Home() {
   if (!connected) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500 text-3xl font-bold text-white">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-900 text-3xl font-bold text-white">
           T
         </div>
         <h1 className="mt-6 text-4xl font-bold text-gray-900">
@@ -130,7 +130,7 @@ export default function Home() {
         <div className="mt-4">
           <WalletButton
             style={{
-              backgroundColor: "#3b82f6",
+              backgroundColor: "#18181b",
               borderRadius: "0.5rem",
               fontSize: "0.875rem",
               height: "2.75rem",
@@ -146,7 +146,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
       </div>
     );
   }

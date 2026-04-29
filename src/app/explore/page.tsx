@@ -54,21 +54,21 @@ export default function ExplorePage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-white">Explore</h1>
-      <p className="mt-1 text-sm text-gray-400">
+      <h1 className="text-2xl font-bold text-gray-900">Explore</h1>
+      <p className="mt-1 text-sm text-gray-500">
         Discover people on the Tribe network
       </p>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : error ? (
         <div className="py-12 text-center">
           <p className="text-gray-500">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-purple-400 hover:underline"
+            className="mt-2 text-sm text-blue-600 hover:underline"
           >
             Retry
           </button>
@@ -92,17 +92,17 @@ export default function ExplorePage() {
             return (
               <div
                 key={user.tid}
-                className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-4 transition-colors hover:bg-gray-800/50"
+                className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
               >
                 <div
                   className="flex cursor-pointer items-center gap-3"
                   onClick={() => router.push(`/profile?tid=${user.tid}`)}
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-purple-600/20 text-sm font-semibold text-purple-400">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-900/20 text-sm font-semibold text-blue-600">
                     {initial}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-gray-900">
                       {displayName}
                       {isMe && (
                         <span className="ml-2 text-xs text-gray-500">

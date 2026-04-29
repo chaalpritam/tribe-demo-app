@@ -55,30 +55,30 @@ export default function TasksPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Tasks</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Things to do, posted by people on the network
           </p>
         </div>
         {myTid !== null && (
           <button
             onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
           >
             + New
           </button>
         )}
       </div>
 
-      <div className="mt-4 inline-flex rounded-lg border border-gray-800 bg-gray-900 p-1">
+      <div className="mt-4 inline-flex rounded-lg border border-gray-200 bg-white p-1">
         {(["open", "claimed", "completed", "all"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-md px-3 py-1 text-sm capitalize ${
               filter === f
-                ? "bg-purple-600 text-white"
-                : "text-gray-400 hover:text-white"
+                ? "bg-gray-900 text-white"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             {f}
@@ -88,7 +88,7 @@ export default function TasksPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
         </div>
       ) : tasks.length === 0 ? (
         <div className="mt-8 text-center">
@@ -176,17 +176,17 @@ function TaskCard({ task, myTid, onUpdated }: TaskCardProps) {
 
   const statusBadge =
     task.status === "open"
-      ? { label: "open", color: "bg-blue-500/20 text-blue-300" }
+      ? { label: "open", color: "bg-gray-900/20 text-blue-300" }
       : task.status === "claimed"
-        ? { label: "claimed", color: "bg-yellow-500/20 text-yellow-300" }
-        : { label: "completed", color: "bg-green-500/20 text-green-300" };
+        ? { label: "claimed", color: "bg-amber-100 text-amber-800" }
+        : { label: "completed", color: "bg-emerald-100 text-emerald-700" };
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-white">{task.title}</p>
+            <p className="font-semibold text-gray-900">{task.title}</p>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusBadge.color}`}
             >
@@ -199,7 +199,7 @@ function TaskCard({ task, myTid, onUpdated }: TaskCardProps) {
             </p>
           )}
           {task.reward_text && (
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-gray-500">
               💰 {task.reward_text}
             </p>
           )}
@@ -219,7 +219,7 @@ function TaskCard({ task, myTid, onUpdated }: TaskCardProps) {
             <button
               onClick={handleClaim}
               disabled={submitting}
-              className="rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               Claim
             </button>
@@ -290,27 +290,27 @@ function CreateTaskModal({ tid, onClose, onCreated }: CreateTaskModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">New task</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white" aria-label="Close">✕</button>
+          <h2 className="text-lg font-bold text-gray-900">New task</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900" aria-label="Close">✕</button>
         </div>
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-400">Title</label>
+            <label className="block text-xs font-medium text-gray-500">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Translate the README to French"
               maxLength={120}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Description <span className="text-gray-600">(optional)</span>
             </label>
             <textarea
@@ -318,12 +318,12 @@ function CreateTaskModal({ tid, onClose, onCreated }: CreateTaskModalProps) {
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               maxLength={1000}
-              className="mt-1 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full resize-none rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400">
+            <label className="block text-xs font-medium text-gray-500">
               Reward <span className="text-gray-600">(free text — what they get for it)</span>
             </label>
             <input
@@ -332,19 +332,19 @@ function CreateTaskModal({ tid, onClose, onCreated }: CreateTaskModalProps) {
               onChange={(e) => setRewardText(e.target.value)}
               placeholder="0.5 SOL on completion"
               maxLength={120}
-              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-900"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
           )}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-300 hover:bg-gray-100"
             >
               Cancel
             </button>
@@ -352,7 +352,7 @@ function CreateTaskModal({ tid, onClose, onCreated }: CreateTaskModalProps) {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {submitting ? "Creating…" : "Post task"}
             </button>

@@ -45,7 +45,7 @@ export default function RetweetButton({ tweetHash }: RetweetButtonProps) {
       onClick={handleToggle}
       disabled={loading}
       className={`flex items-center gap-1 text-sm transition-colors ${
-        retweeted ? "text-green-500" : "text-gray-500 hover:text-green-400"
+        retweeted ? "text-emerald-600" : "text-gray-500 hover:text-emerald-600"
       }`}
       title={retweeted ? "Undo retweet" : "Retweet"}
     >
