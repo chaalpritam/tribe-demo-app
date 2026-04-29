@@ -474,3 +474,121 @@ export async function signAndPublishUserData(args: {
 
   return res.json();
 }
+
+/** ChannelKind values match the protobuf enum the hub validates against. */
+export const ChannelKind = {
+  CITY: 2,
+  INTEREST: 3,
+} as const;
+
+export type ChannelKindValue = (typeof ChannelKind)[keyof typeof ChannelKind];
+
+/**
+ * Create a new channel via CHANNEL_ADD (type 9). The hub rejects:
+ *   - empty channel_id or channel_id that doesn't match /^[a-z0-9-]{1,64}$/
+ *   - the reserved id "general"
+ *   - kind = GENERAL (1) — only CITY (2) and INTEREST (3) are user-creatable
+ *
+ * latitude/longitude are persisted only when kind is CITY.
+ */
+export async function signAndCreateChannel(args: {
+  tid: number;
+  channelId: string;
+  name: string;
+  description?: string;
+  kind: ChannelKindValue;
+  latitude?: number;
+  longitude?: number;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    channel_id: args.channelId,
+    name: args.name,
+    kind: args.kind,
+  };
+  if (args.description) body.description = args.description;
+  if (args.kind === ChannelKind.CITY) {
+    if (typeof args.latitude === "number") body.latitude = args.latitude;
+    if (typeof args.longitude === "number") body.longitude = args.longitude;
+  }
+
+  return submitChannelEnvelope({
+    type: 9, // CHANNEL_ADD
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Channel create",
+  });
+}
+
+/** Join a channel via CHANNEL_JOIN (type 10). */
+export async function signAndJoinChannel(args: {
+  tid: number;
+  channelId: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitChannelEnvelope({
+    type: 10,
+    tid: args.tid,
+    body: { channel_id: args.channelId },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Channel join",
+  });
+}
+
+/** Leave a channel via CHANNEL_LEAVE (type 11). */
+export async function signAndLeaveChannel(args: {
+  tid: number;
+  channelId: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitChannelEnvelope({
+    type: 11,
+    tid: args.tid,
+    body: { channel_id: args.channelId },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Channel leave",
+  });
+}
+
+async function submitChannelEnvelope(args: {
+  type: number;
+  tid: number;
+  body: Record<string, unknown>;
+  signingKeySecret: Uint8Array;
+  errorLabel: string;
+}): Promise<{ hash: string }> {
+  const data = {
+    type: args.type,
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2, // DEVNET
+    body: args.body,
+  };
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+
+  const res = await hubFetch("/v1/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`${args.errorLabel} failed: ${res.status} ${errBody}`);
+  }
+
+  return res.json();
+}
