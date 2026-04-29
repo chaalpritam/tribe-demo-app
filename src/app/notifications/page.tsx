@@ -1,35 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchNotifications, markNotificationsRead } from "@/lib/api";
+import { fetchNotifications } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 
+type NotificationType =
+  | "follow"
+  | "reaction"
+  | "reply"
+  | "tip"
+  | "mention"
+  | "poll_vote"
+  | "event_rsvp"
+  | "task_claim"
+  | "task_complete"
+  | "crowdfund_pledge";
+
 interface Notification {
-  id: number;
-  tid: string;
-  type: "follow" | "like" | "reply" | "mention";
-  from_tid: string | null;
-  from_username: string | null;
-  tweet_hash: string | null;
-  read: boolean;
+  type: NotificationType;
+  actor_tid: string;
+  target_hash: string | null;
+  preview: string | null;
   created_at: string;
 }
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<NotificationType, string> = {
   follow: "followed you",
-  like: "liked your tweet",
+  reaction: "reacted to your tweet",
   reply: "replied to your tweet",
+  tip: "tipped you",
   mention: "mentioned you",
+  poll_vote: "voted on your poll",
+  event_rsvp: "RSVPed to your event",
+  task_claim: "claimed your task",
+  task_complete: "completed your task",
+  crowdfund_pledge: "pledged to your crowdfund",
 };
 
-const TYPE_ICONS = {
+const TYPE_ICONS: Record<NotificationType, string> = {
   follow: "👤",
-  like: "❤️",
+  reaction: "❤️",
   reply: "💬",
+  tip: "💸",
   mention: "@",
+  poll_vote: "📊",
+  event_rsvp: "📅",
+  task_claim: "🛠",
+  task_complete: "✅",
+  crowdfund_pledge: "🪙",
 };
+
+// Tweet-anchored types link to /tweet?hash=…; everything else stays on the
+// notifications screen (no dedicated detail routes for poll/event/task/etc).
+const TWEET_HASH_TYPES: NotificationType[] = ["reaction", "reply", "tip", "mention"];
+
+const LAST_SEEN_KEY_PREFIX = "tribe.notifications.lastSeen.";
 
 export default function NotificationsPage() {
   const { connected } = useWallet();
@@ -37,10 +64,15 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<string | null>(null);
+  const [lastSeen, setLastSeen] = useState<number>(0);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
-    if (stored) setMyTid(stored);
+    if (stored) {
+      setMyTid(stored);
+      const seen = localStorage.getItem(LAST_SEEN_KEY_PREFIX + stored);
+      setLastSeen(seen ? Number(seen) : 0);
+    }
   }, []);
 
   useEffect(() => {
@@ -53,10 +85,16 @@ export default function NotificationsPage() {
       .finally(() => setLoading(false));
   }, [myTid]);
 
-  const handleMarkAllRead = async () => {
+  const hasUnread = useMemo(
+    () => notifications.some((n) => new Date(n.created_at).getTime() > lastSeen),
+    [notifications, lastSeen]
+  );
+
+  const handleMarkAllRead = () => {
     if (!myTid) return;
-    await markNotificationsRead(myTid);
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const now = Date.now();
+    localStorage.setItem(LAST_SEEN_KEY_PREFIX + myTid, String(now));
+    setLastSeen(now);
   };
 
   if (!connected) {
@@ -70,11 +108,11 @@ export default function NotificationsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Notifications</h1>
-        {notifications.some((n) => !n.read) && (
+        <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+        {hasUnread && (
           <button
             onClick={handleMarkAllRead}
-            className="text-sm text-purple-400 hover:underline"
+            className="text-sm text-blue-600 hover:underline"
           >
             Mark all as read
           </button>
@@ -83,14 +121,14 @@ export default function NotificationsPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
         </div>
       ) : error ? (
         <div className="py-12 text-center">
           <p className="text-gray-500">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-purple-400 hover:underline"
+            className="mt-2 text-sm text-blue-600 hover:underline"
           >
             Retry
           </button>
@@ -98,38 +136,43 @@ export default function NotificationsPage() {
       ) : notifications.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">No notifications yet</p>
       ) : (
-        <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900">
-          {notifications.map((n) => {
-            const fromName = n.from_username
-              ? `${n.from_username}.tribe`
-              : n.from_tid
-              ? `TID #${n.from_tid}`
-              : "Someone";
+        <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          {notifications.map((n, idx) => {
+            const ts = new Date(n.created_at).getTime();
+            const unread = ts > lastSeen;
+            const fromName = n.actor_tid ? `TID #${n.actor_tid}` : "Someone";
+            const tweetLink =
+              TWEET_HASH_TYPES.includes(n.type) && n.target_hash
+                ? `/tweet?hash=${encodeURIComponent(n.target_hash)}`
+                : null;
 
             return (
               <div
-                key={n.id}
-                className={`flex items-start gap-3 border-b border-gray-800 px-4 py-3 ${
-                  !n.read ? "bg-purple-900/10" : ""
+                key={`${n.type}-${n.actor_tid}-${n.target_hash ?? ""}-${n.created_at}-${idx}`}
+                className={`flex items-start gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 ${
+                  unread ? "bg-blue-50/40" : ""
                 }`}
               >
-                <span className="mt-0.5 text-lg">
-                  {TYPE_ICONS[n.type]}
-                </span>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-200">
+                <span className="mt-0.5 text-lg">{TYPE_ICONS[n.type]}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800">
                     <Link
-                      href={`/profile?tid=${n.from_tid}`}
-                      className="font-semibold text-white hover:underline"
+                      href={`/profile?tid=${n.actor_tid}`}
+                      className="font-semibold text-gray-900 hover:underline"
                     >
                       {fromName}
                     </Link>{" "}
                     {TYPE_LABELS[n.type]}
                   </p>
-                  {n.tweet_hash && (
+                  {n.preview && (
+                    <p className="mt-1 truncate text-xs text-gray-600">
+                      {n.preview}
+                    </p>
+                  )}
+                  {tweetLink && (
                     <Link
-                      href={`/tweet?hash=${encodeURIComponent(n.tweet_hash)}`}
-                      className="mt-1 block text-xs text-purple-400 hover:underline"
+                      href={tweetLink}
+                      className="mt-1 block text-xs text-blue-600 hover:underline"
                     >
                       View tweet
                     </Link>
@@ -138,8 +181,8 @@ export default function NotificationsPage() {
                     {getTimeAgo(new Date(n.created_at))}
                   </p>
                 </div>
-                {!n.read && (
-                  <div className="mt-1 h-2 w-2 rounded-full bg-purple-500" />
+                {unread && (
+                  <div className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
                 )}
               </div>
             );

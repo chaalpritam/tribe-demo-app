@@ -390,14 +390,6 @@ export async function fetchUnreadCount(tid: string): Promise<number> {
   return data.count ?? 0;
 }
 
-export async function markNotificationsRead(tid: string, ids?: number[]) {
-  await hubFetch(`/v1/notifications/${tid}/read`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
-}
-
 export async function fetchBookmarks(tid: string) {
   const res = await hubFetch(`/v1/bookmarks/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch bookmarks: ${res.statusText}`);
