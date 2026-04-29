@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchUser, fetchFollowing, resolveMediaUrl } from "@/lib/api";
+import {
+  fetchUser,
+  fetchFollowing,
+  fetchKarma,
+  resolveMediaUrl,
+  type KarmaSummary,
+} from "@/lib/api";
 import { erFollow } from "@/lib/er-client";
 
 interface ProfileSidebarProps {
@@ -27,6 +33,7 @@ export default function ProfileSidebar({
   const [followInput, setFollowInput] = useState("");
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+  const [karma, setKarma] = useState<KarmaSummary | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -53,6 +60,13 @@ export default function ProfileSidebar({
       try {
         const data = await fetchFollowing(tid);
         setFollowingList(data?.following ?? []);
+      } catch {
+        // ignore
+      }
+
+      try {
+        const k = await fetchKarma(tid);
+        if (k) setKarma(k);
       } catch {
         // ignore
       }
@@ -125,12 +139,37 @@ export default function ProfileSidebar({
             </p>
             <p className="text-sm text-gray-600">Followers</p>
           </div>
+          {karma && (
+            <div>
+              <p className="text-lg font-semibold text-gray-900">
+                {karma.total.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-600">
+                Karma · L{karma.level}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
 
-      {bio && (
-        <p className="mt-3 text-sm text-gray-600">{bio}</p>
-      )}
+        {bio && (
+          <p className="mt-3 text-sm text-gray-600">{bio}</p>
+        )}
+
+        {karma && (
+          <details className="mt-3 group">
+            <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
+              Karma breakdown
+            </summary>
+            <div className="mt-2 space-y-1 text-xs text-gray-600">
+              <KarmaRow label="Tweets" count={karma.breakdown.tweets} weight={karma.weights.tweet} />
+              <KarmaRow label="Reactions received" count={karma.breakdown.reactions_received} weight={karma.weights.reactionReceived} />
+              <KarmaRow label="Followers" count={karma.breakdown.followers} weight={karma.weights.follower} />
+              <KarmaRow label="Tips received" count={karma.breakdown.tips_received} weight={karma.weights.tipReceived} />
+              <KarmaRow label="Tasks completed" count={karma.breakdown.tasks_completed} weight={karma.weights.taskCompleted} />
+            </div>
+          </details>
+        )}
+      </div>
 
       {/* Follow someone */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -186,6 +225,25 @@ export default function ProfileSidebar({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function KarmaRow({
+  label,
+  count,
+  weight,
+}: {
+  label: string;
+  count: number;
+  weight: number;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span>{label}</span>
+      <span className="text-gray-500">
+        {count} × {weight} = <span className="font-mono text-gray-700">{count * weight}</span>
+      </span>
     </div>
   );
 }

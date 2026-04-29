@@ -290,6 +290,28 @@ export async function fetchCrowdfundPledges(
   return res.json();
 }
 
+// ── Karma ───────────────────────────────────────────────────────────
+
+export interface KarmaSummary {
+  tid: string;
+  total: number;
+  level: 1 | 2 | 3 | 4 | 5;
+  breakdown: {
+    tweets: number;
+    reactions_received: number;
+    followers: number;
+    tips_received: number;
+    tasks_completed: number;
+  };
+  weights: Record<string, number>;
+}
+
+export async function fetchKarma(tid: string): Promise<KarmaSummary | null> {
+  const res = await hubFetch(`/v1/users/${tid}/karma`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await hubFetch(`/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);
