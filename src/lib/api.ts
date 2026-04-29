@@ -312,6 +312,57 @@ export async function fetchKarma(tid: string): Promise<KarmaSummary | null> {
   return res.json();
 }
 
+// ── Group DMs ───────────────────────────────────────────────────────
+
+export interface DmGroupRow {
+  id: string;
+  name: string;
+  creator_tid: string;
+  created_at: string;
+  joined_at?: string;
+  member_count: number;
+}
+
+export interface DmGroupMessage {
+  hash: string;
+  sender_tid: string;
+  sender_x25519: string;
+  timestamp: string;
+  ciphertext: string;
+  nonce: string;
+}
+
+export async function fetchUserGroups(
+  tid: string,
+): Promise<{ groups: DmGroupRow[] }> {
+  const res = await hubFetch(`/v1/dm/groups/member/${tid}`);
+  if (!res.ok) return { groups: [] };
+  return res.json();
+}
+
+export async function fetchGroup(
+  groupId: string,
+): Promise<
+  (Omit<DmGroupRow, "joined_at" | "member_count"> & {
+    members: { tid: string; joined_at: string }[];
+  }) | null
+> {
+  const res = await hubFetch(`/v1/dm/groups/${encodeURIComponent(groupId)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchGroupMessages(
+  groupId: string,
+  tid: string,
+): Promise<{ messages: DmGroupMessage[] }> {
+  const res = await hubFetch(
+    `/v1/dm/groups/${encodeURIComponent(groupId)}/messages?tid=${encodeURIComponent(tid)}`,
+  );
+  if (!res.ok) return { messages: [] };
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await hubFetch(`/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);

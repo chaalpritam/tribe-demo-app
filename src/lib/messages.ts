@@ -841,3 +841,159 @@ export async function signAndPledgeCrowdfund(args: {
     errorLabel: "Crowdfund pledge",
   });
 }
+
+/**
+ * Group DMs use a fan-out encryption pattern: the sender encrypts
+ * the same plaintext once per recipient with that recipient's
+ * x25519 pubkey, packs the ciphertexts into the envelope, and
+ * the hub stores one row per recipient. Each member can decrypt
+ * only their own slot.
+ *
+ * Hub validates: caller must be a member to send; group_id must
+ * match `^[a-z0-9-]{1,64}$`; member_tids must include >=2 members
+ * (typically the creator + at least one other).
+ */
+export async function signAndCreateGroup(args: {
+  tid: number;
+  groupId: string;
+  name: string;
+  memberTids: number[];
+  signingKeySecret: Uint8Array;
+}): Promise<{ group_id: string }> {
+  // Use the messages-side helper rather than POSTing direct to the
+  // dm/groups/create route, since the hub validates the envelope
+  // through verifyAndPersistEnvelope just like every other write.
+  const data = {
+    type: 26, // DM_GROUP_CREATE
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2,
+    body: {
+      group_id: args.groupId,
+      name: args.name,
+      // Hub stores tids as bigint; serialize numbers as numbers (the
+      // submit route parses both string and number forms).
+      member_tids: args.memberTids,
+    },
+  };
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+  const res = await hubFetch("/v1/dm/groups/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Group create failed: ${res.status} ${err}`);
+  }
+  return res.json();
+}
+
+/**
+ * Send a per-recipient-encrypted group message. Caller is responsible
+ * for producing the ciphertexts array — encrypt the same plaintext
+ * once per recipient with that recipient's x25519 pubkey using
+ * tweetnacl's `box`, with a fresh nonce per recipient.
+ */
+export async function signAndSendGroupMessage(args: {
+  tid: number;
+  groupId: string;
+  senderX25519: string;
+  ciphertexts: Array<{ recipient_tid: number; ciphertext: string; nonce: string }>;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string; group_id: string }> {
+  const data = {
+    type: 27, // DM_GROUP_SEND
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2,
+    body: {
+      group_id: args.groupId,
+      sender_x25519: args.senderX25519,
+      ciphertexts: args.ciphertexts,
+    },
+  };
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+  const res = await hubFetch("/v1/dm/groups/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Group send failed: ${res.status} ${err}`);
+  }
+  return res.json();
+}
+
+/**
+ * Mark progress through a 1:1 conversation via DM_READ (type 28).
+ * Hub keeps the latest read mark per (tid, conversation_id), so
+ * later reads with an older timestamp are ignored. Both participants
+ * can render each other's last-read marker via
+ * GET /v1/dm/conversations/:id/reads.
+ */
+export async function signAndMarkRead(args: {
+  tid: number;
+  conversationId: string;
+  lastReadHash: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ ok: boolean }> {
+  const data = {
+    type: 28, // DM_READ
+    tid: args.tid,
+    timestamp: Math.floor(Date.now() / 1000),
+    network: 2,
+    body: {
+      conversation_id: args.conversationId,
+      last_read_hash: args.lastReadHash,
+    },
+  };
+  const dataBytes = new TextEncoder().encode(JSON.stringify(data));
+  const hashBytes = await blake3Hash(dataBytes);
+  const keyPair = nacl.sign.keyPair.fromSecretKey(args.signingKeySecret);
+  const signature = nacl.sign.detached(hashBytes, args.signingKeySecret);
+
+  const message = {
+    protocolVersion: 1,
+    data,
+    dataB64: toBase64(dataBytes),
+    hash: toBase64(hashBytes),
+    signature: toBase64(signature),
+    signer: toBase64(keyPair.publicKey),
+  };
+  const res = await hubFetch("/v1/dm/read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`DM read mark failed: ${res.status} ${err}`);
+  }
+  return res.json();
+}
