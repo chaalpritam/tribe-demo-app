@@ -423,6 +423,35 @@ export async function fetchUsers() {
   return res.json();
 }
 
+export interface TipRow {
+  hash: string;
+  sender_tid: string;
+  recipient_tid: string;
+  target_hash: string | null;
+  amount: string;
+  currency: string;
+  tx_signature: string | null;
+  sent_at: string;
+}
+
+export async function fetchTipsSent(
+  tid: string,
+  limit = 50,
+): Promise<{ tips: TipRow[] }> {
+  const res = await hubFetch(`/v1/tips/sent/${tid}?limit=${limit}`);
+  if (!res.ok) return { tips: [] };
+  return res.json();
+}
+
+export async function fetchTipsReceived(
+  tid: string,
+  limit = 50,
+): Promise<{ tips: TipRow[] }> {
+  const res = await hubFetch(`/v1/tips/received/${tid}?limit=${limit}`);
+  if (!res.ok) return { tips: [] };
+  return res.json();
+}
+
 export async function fetchNotifications(tid: string, unreadOnly = false) {
   const params = new URLSearchParams({ limit: "20" });
   if (unreadOnly) params.set("unread_only", "true");

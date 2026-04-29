@@ -202,6 +202,22 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/wallet",
+    label: "Wallet",
+    icon: (active) => (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={active ? 2.4 : 1.8}
+        className="h-6 w-6"
+      >
+        <path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0 0 4h15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" strokeLinejoin="round" />
+        <circle cx="16" cy="13" r="1.2" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
     href: "/settings",
     label: "Settings",
     icon: (active) => (
@@ -306,7 +322,7 @@ export default function LeftSidebar() {
           NAV_ITEMS[1], // Search
           NAV_ITEMS[3], // Notifications
           NAV_ITEMS[4], // Messages
-          NAV_ITEMS[11], // Settings
+          NAV_ITEMS[11], // Wallet
         ].map((item) => {
           const active = isActive(item);
           const badge = item.badgeKey === "notifications" ? notifCount : 0;
