@@ -56,6 +56,18 @@ export default function Navbar() {
             Channels
           </Link>
           <Link
+            href="/polls"
+            className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+          >
+            Polls
+          </Link>
+          <Link
+            href="/events"
+            className="text-sm text-gray-600 transition-colors hover:text-gray-900"
+          >
+            Events
+          </Link>
+          <Link
             href="/messages"
             className="text-sm text-gray-600 transition-colors hover:text-gray-900"
           >
