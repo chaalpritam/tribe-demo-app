@@ -5,6 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
+import MobilePairingPanel from "@/components/MobilePairingPanel";
 
 interface ProfileForm {
   displayName: string;
@@ -251,6 +252,8 @@ export default function SettingsPage() {
           </p>
         )}
       </div>
+
+      <MobilePairingPanel />
     </div>
   );
 }
