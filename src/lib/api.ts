@@ -100,6 +100,54 @@ export async function searchTweets(query: string) {
   return res.json();
 }
 
+export async function searchUsers(query: string) {
+  const res = await hubFetch(
+    `/v1/search/users?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { users: [] };
+  return res.json();
+}
+
+export async function searchChannels(query: string) {
+  const res = await hubFetch(
+    `/v1/search/channels?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { channels: [] };
+  return res.json();
+}
+
+export async function searchPolls(query: string) {
+  const res = await hubFetch(
+    `/v1/search/polls?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { polls: [] };
+  return res.json();
+}
+
+export async function searchEvents(query: string) {
+  const res = await hubFetch(
+    `/v1/search/events?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { events: [] };
+  return res.json();
+}
+
+export async function searchTasks(query: string) {
+  const res = await hubFetch(
+    `/v1/search/tasks?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { tasks: [] };
+  return res.json();
+}
+
+export async function searchCrowdfunds(query: string) {
+  const res = await hubFetch(
+    `/v1/search/crowdfunds?q=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!res.ok) return { crowdfunds: [] };
+  return res.json();
+}
+
 export async function fetchChannels() {
   const res = await hubFetch("/v1/channels");
   if (!res.ok) throw new Error(`Failed to fetch channels: ${res.statusText}`);
