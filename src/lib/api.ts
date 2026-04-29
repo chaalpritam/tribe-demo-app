@@ -207,6 +207,89 @@ export async function fetchUserRsvp(
   return res.json();
 }
 
+// ── Tasks ───────────────────────────────────────────────────────────
+
+export type TaskStatus = "open" | "claimed" | "completed";
+
+export interface TaskRow {
+  id: string;
+  creator_tid: string;
+  title: string;
+  description: string | null;
+  reward_text: string | null;
+  channel_id: string | null;
+  status: TaskStatus;
+  claimed_by_tid: string | null;
+  completed_by_tid: string | null;
+  claimed_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export async function fetchTasks(
+  status?: TaskStatus,
+): Promise<{ tasks: TaskRow[] }> {
+  const url = status ? `/v1/tasks?status=${status}` : "/v1/tasks";
+  const res = await hubFetch(url);
+  if (!res.ok) return { tasks: [] };
+  return res.json();
+}
+
+export async function fetchTask(id: string): Promise<TaskRow | null> {
+  const res = await hubFetch(`/v1/tasks/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// ── Crowdfunds ──────────────────────────────────────────────────────
+
+export interface CrowdfundRow {
+  id: string;
+  creator_tid: string;
+  title: string;
+  description: string | null;
+  goal_amount: number;
+  currency: string;
+  deadline_at: string | null;
+  image_url: string | null;
+  channel_id: string | null;
+  created_at: string;
+  raised_amount: number;
+  pledger_count: number;
+}
+
+export interface CrowdfundPledgeRow {
+  hash: string;
+  pledger_tid: string;
+  amount: number;
+  currency: string;
+  pledged_at: string;
+}
+
+export async function fetchCrowdfunds(): Promise<{
+  crowdfunds: CrowdfundRow[];
+}> {
+  const res = await hubFetch("/v1/crowdfunds");
+  if (!res.ok) return { crowdfunds: [] };
+  return res.json();
+}
+
+export async function fetchCrowdfund(id: string): Promise<CrowdfundRow | null> {
+  const res = await hubFetch(`/v1/crowdfunds/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function fetchCrowdfundPledges(
+  id: string,
+): Promise<{ pledges: CrowdfundPledgeRow[] }> {
+  const res = await hubFetch(
+    `/v1/crowdfunds/${encodeURIComponent(id)}/pledges`,
+  );
+  if (!res.ok) return { pledges: [] };
+  return res.json();
+}
+
 export async function fetchReplies(hash: string) {
   const res = await hubFetch(`/v1/replies?hash=${encodeURIComponent(hash)}`);
   if (!res.ok) throw new Error(`Failed to fetch replies: ${res.statusText}`);

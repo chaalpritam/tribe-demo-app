@@ -710,3 +710,134 @@ export async function signAndRsvpEvent(args: {
     errorLabel: "Event RSVP",
   });
 }
+
+/**
+ * Create a task via TASK_ADD (type 20). Hub validates task_id against
+ * `^[a-z0-9-]{1,64}$`. Status starts at "open"; claim moves it to
+ * "claimed", complete moves it to "completed".
+ *
+ * reward_text is a free-form description of the reward (the protocol
+ * doesn't escrow funds — the off-chain envelope is just an
+ * advertisement; on-chain task-registry exists for that flow).
+ */
+export async function signAndCreateTask(args: {
+  tid: number;
+  taskId: string;
+  title: string;
+  description?: string;
+  rewardText?: string;
+  channelId?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    task_id: args.taskId,
+    title: args.title,
+  };
+  if (args.description) body.description = args.description;
+  if (args.rewardText) body.reward_text = args.rewardText;
+  if (args.channelId) body.channel_id = args.channelId;
+  return submitTypedEnvelope({
+    type: 20,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Task create",
+  });
+}
+
+/** Claim an open task via TASK_CLAIM (type 21). Hub rejects if not "open". */
+export async function signAndClaimTask(args: {
+  tid: number;
+  taskId: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitTypedEnvelope({
+    type: 21,
+    tid: args.tid,
+    body: { task_id: args.taskId },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Task claim",
+  });
+}
+
+/**
+ * Mark a claimed task complete via TASK_COMPLETE (type 22). Hub rejects
+ * if not in "claimed" state OR the caller is neither the claimer nor
+ * the creator (the creator can mark complete on behalf of the claimer
+ * — useful for "I see you finished the task, marking done").
+ */
+export async function signAndCompleteTask(args: {
+  tid: number;
+  taskId: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitTypedEnvelope({
+    type: 22,
+    tid: args.tid,
+    body: { task_id: args.taskId },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Task complete",
+  });
+}
+
+/**
+ * Create a crowdfund via CROWDFUND_ADD (type 23). The hub stores a
+ * positive `goal_amount` and an optional `deadline_at` (unix seconds).
+ * Currency is free-form ("USD" by default at the hub side).
+ */
+export async function signAndCreateCrowdfund(args: {
+  tid: number;
+  crowdfundId: string;
+  title: string;
+  description?: string;
+  goalAmount: number;
+  currency?: string;
+  deadlineAtUnix?: number;
+  imageUrl?: string;
+  channelId?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    crowdfund_id: args.crowdfundId,
+    title: args.title,
+    goal_amount: args.goalAmount,
+  };
+  if (args.description) body.description = args.description;
+  if (args.currency) body.currency = args.currency;
+  if (args.deadlineAtUnix) body.deadline_at = args.deadlineAtUnix;
+  if (args.imageUrl) body.image_url = args.imageUrl;
+  if (args.channelId) body.channel_id = args.channelId;
+  return submitTypedEnvelope({
+    type: 23,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Crowdfund create",
+  });
+}
+
+/**
+ * Pledge to a crowdfund via CROWDFUND_PLEDGE (type 24). Off-chain
+ * envelope only — the actual fund movement happens via tip-registry
+ * or directly on Solana with the crowdfund-registry's PDA.
+ */
+export async function signAndPledgeCrowdfund(args: {
+  tid: number;
+  crowdfundId: string;
+  amount: number;
+  currency?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = {
+    crowdfund_id: args.crowdfundId,
+    amount: args.amount,
+  };
+  if (args.currency) body.currency = args.currency;
+  return submitTypedEnvelope({
+    type: 24,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Crowdfund pledge",
+  });
+}
