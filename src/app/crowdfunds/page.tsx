@@ -11,6 +11,9 @@ import {
   signAndPledgeCrowdfund,
 } from "@/lib/messages";
 import { STORAGE_KEYS } from "@/lib/constants";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function loadAppKey(): Uint8Array | null {
   const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
@@ -51,36 +54,40 @@ export default function CrowdfundsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Crowdfunds</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Community-funded campaigns
-          </p>
-        </div>
-        {myTid !== null && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-          >
-            + New
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Crowdfunds"
+        subtitle="Community-funded campaigns"
+        action={
+          myTid !== null ? (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+            >
+              + New crowdfund
+            </button>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : campaigns.length === 0 ? (
-        <div className="mt-8 text-center">
-          <p className="text-gray-500">No active crowdfunds.</p>
-          <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-blue-600">+ New</span> to start one.
-          </p>
-        </div>
+        <EmptyState
+          title="No crowdfunds yet"
+          body="Rally the network around something worth pooling resources for."
+          action={
+            myTid !== null ? (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                Start a crowdfund
+              </button>
+            ) : null
+          }
+        />
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {campaigns.map((cf) => (
             <CrowdfundCard
               key={cf.id}

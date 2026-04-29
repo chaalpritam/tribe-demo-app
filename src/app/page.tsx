@@ -103,23 +103,23 @@ export default function Home() {
           your data, and your social graph.
         </p>
 
-        <div className="mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500">On-Chain</div>
-            <p className="mt-1 text-sm text-gray-600">
-              Identity & social graph stored on Solana
+        <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+            <div className="text-base font-semibold text-gray-900">On-chain</div>
+            <p className="mt-1 text-sm text-gray-500">
+              Identity & social graph stored on Solana.
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500">Self-Owned</div>
-            <p className="mt-1 text-sm text-gray-600">
-              Your keys, your data, your network
+          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+            <div className="text-base font-semibold text-gray-900">Self-owned</div>
+            <p className="mt-1 text-sm text-gray-500">
+              Your keys, your data, your network.
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500">Fast</div>
-            <p className="mt-1 text-sm text-gray-600">
-              Ephemeral rollups for instant interactions
+          <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+            <div className="text-base font-semibold text-gray-900">Fast</div>
+            <p className="mt-1 text-sm text-gray-500">
+              Ephemeral rollups for instant interactions.
             </p>
           </div>
         </div>

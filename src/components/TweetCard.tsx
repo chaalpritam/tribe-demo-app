@@ -82,7 +82,7 @@ export default function TweetCard({
       <div className="flex items-start gap-3">
         <Link
           href={`/profile?tid=${tid}`}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-200"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 transition-colors hover:bg-gray-200"
         >
           {initial}
         </Link>

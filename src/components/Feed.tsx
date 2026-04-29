@@ -66,19 +66,28 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
 
   if (loading && tweets.length === 0) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+      <div className="space-y-3 px-4 py-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-start gap-3">
+            <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-100" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-1/3 animate-pulse rounded bg-gray-100" />
+              <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
+              <div className="h-3 w-3/5 animate-pulse rounded bg-gray-100" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   if (error && tweets.length === 0) {
     return (
-      <div className="px-4 py-8 text-center">
-        <p className="text-gray-500">{error}</p>
+      <div className="px-4 py-12 text-center">
+        <p className="text-sm text-gray-500">{error}</p>
         <button
           onClick={loadTweets}
-          className="mt-2 text-sm text-blue-600 hover:underline"
+          className="mt-2 text-sm font-semibold text-blue-600 hover:underline"
         >
           Retry
         </button>
@@ -88,8 +97,11 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
 
   if (tweets.length === 0) {
     return (
-      <div className="px-4 py-12 text-center">
-        <p className="text-gray-500">No tweets yet. Be the first to post!</p>
+      <div className="px-4 py-14 text-center">
+        <p className="text-sm font-semibold text-gray-900">It&apos;s quiet here</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Post the first tweet — your followers will see it instantly.
+        </p>
       </div>
     );
   }

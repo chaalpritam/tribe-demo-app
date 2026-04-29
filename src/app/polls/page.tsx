@@ -5,6 +5,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchPoll, fetchPolls, fetchUserPollVote, type PollRow } from "@/lib/api";
 import { signAndCreatePoll, signAndVotePoll } from "@/lib/messages";
 import { STORAGE_KEYS } from "@/lib/constants";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function loadAppKey(): Uint8Array | null {
   const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
@@ -44,36 +47,40 @@ export default function PollsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Polls</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Ask the network a question
-          </p>
-        </div>
-        {myTid !== null && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-          >
-            + New
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Polls"
+        subtitle="Ask the network a question"
+        action={
+          myTid !== null ? (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+            >
+              + New poll
+            </button>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : polls.length === 0 ? (
-        <div className="mt-8 text-center">
-          <p className="text-gray-500">No polls yet.</p>
-          <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-blue-600">+ New</span> to start one.
-          </p>
-        </div>
+        <EmptyState
+          title="No polls yet"
+          body="Be the first to ask the network something."
+          action={
+            myTid !== null ? (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                Create poll
+              </button>
+            ) : null
+          }
+        />
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {polls.map((p) => (
             <PollCard
               key={p.id}
@@ -194,20 +201,20 @@ function PollCard({ poll, myTid, onVoted }: PollCardProps) {
               disabled={voting || expired || myTid === null}
               className={`relative w-full overflow-hidden rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                 isMine
-                  ? "border-purple-500 bg-purple-500/10"
+                  ? "border-gray-900 bg-gray-100"
                   : "border-gray-200 hover:bg-gray-100"
               } ${voting || expired ? "cursor-default" : ""}`}
             >
               <div
-                className="absolute inset-y-0 left-0 bg-purple-500/20"
+                className="absolute inset-y-0 left-0 bg-gray-200"
                 style={{ width: `${pct}%` }}
                 aria-hidden
               />
-              <div className="relative flex items-center justify-between text-white">
+              <div className="relative flex items-center justify-between text-gray-900">
                 <span>
                   {label}
                   {isMine && (
-                    <span className="ml-2 text-[10px] uppercase text-purple-300">
+                    <span className="ml-2 text-[10px] uppercase text-gray-500">
                       your vote
                     </span>
                   )}

@@ -5,6 +5,9 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchBookmarks } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface Bookmark {
   tweet_hash: string;
@@ -48,26 +51,38 @@ export default function BookmarksPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900">Bookmarks</h1>
+      <PageHeader
+        title="Bookmarks"
+        subtitle="Tweets you saved for later"
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : error ? (
-        <div className="py-12 text-center">
-          <p className="text-gray-500">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-blue-600 hover:underline"
-          >
-            Retry
-          </button>
-        </div>
+        <EmptyState
+          title="Couldn't load bookmarks"
+          body={error}
+          action={
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm font-semibold text-blue-600 hover:underline"
+            >
+              Retry
+            </button>
+          }
+        />
       ) : bookmarks.length === 0 ? (
-        <p className="mt-8 text-center text-gray-500">No bookmarks yet</p>
+        <EmptyState
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+              <path d="M6 4h12v17l-6-4-6 4V4z" strokeLinejoin="round" />
+            </svg>
+          }
+          title="No bookmarks yet"
+          body="Tap the bookmark icon on any tweet to save it here."
+        />
       ) : (
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           {bookmarks.map((b) => (
             <TweetCard
               key={b.tweet_hash}

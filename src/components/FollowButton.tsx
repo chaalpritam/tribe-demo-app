@@ -59,19 +59,22 @@ export default function FollowButton({
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+      className={`group rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
         following
-          ? "border border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600"
-          : "bg-white text-black hover:bg-gray-200"
+          ? "border border-gray-300 bg-white text-gray-900 hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+          : "bg-gray-900 text-white hover:bg-gray-800"
       }`}
     >
-      {loading
-        ? "..."
-        : following
-        ? pending
-          ? "Pending"
-          : "Following"
-        : "Follow"}
+      {loading ? (
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      ) : following ? (
+        <>
+          {pending ? "Pending" : "Following"}
+          <span className="hidden group-hover:inline">{pending ? "" : " · Unfollow"}</span>
+        </>
+      ) : (
+        "Follow"
+      )}
     </button>
   );
 }

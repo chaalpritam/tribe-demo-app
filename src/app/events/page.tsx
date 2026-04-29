@@ -10,6 +10,9 @@ import {
 } from "@/lib/api";
 import { signAndCreateEvent, signAndRsvpEvent, type RsvpStatus } from "@/lib/messages";
 import { STORAGE_KEYS } from "@/lib/constants";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function loadAppKey(): Uint8Array | null {
   const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
@@ -50,24 +53,22 @@ export default function EventsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Events</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            What&apos;s happening on the network
-          </p>
-        </div>
-        {myTid !== null && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-          >
-            + New
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Events"
+        subtitle="What's happening on the network"
+        action={
+          myTid !== null ? (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+            >
+              + New event
+            </button>
+          ) : null
+        }
+      />
 
-      <div className="mt-4 inline-flex rounded-lg border border-gray-200 bg-white p-1">
+      <div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-white p-1">
         {(["upcoming", "all"] as const).map((f) => (
           <button
             key={f}
@@ -82,20 +83,24 @@ export default function EventsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : events.length === 0 ? (
-        <div className="mt-8 text-center">
-          <p className="text-gray-500">
-            {filter === "upcoming" ? "No upcoming events." : "No events yet."}
-          </p>
-          <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-blue-600">+ New</span> to schedule one.
-          </p>
-        </div>
+        <EmptyState
+          title={filter === "upcoming" ? "No upcoming events" : "No events yet"}
+          body="Schedule something — meetups, calls, anything the network would care about."
+          action={
+            myTid !== null ? (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                Create event
+              </button>
+            ) : null
+          }
+        />
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {events.map((ev) => (
             <EventCard key={ev.id} event={ev} myTid={myTid} onRsvped={() => setRefreshKey((k) => k + 1)} />
           ))}

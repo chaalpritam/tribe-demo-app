@@ -413,7 +413,7 @@ function MessagesPage() {
                       className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-blue-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
                           {conv.other_username?.[0]?.toUpperCase() ?? conv.other_tid}
                         </div>
                         <div>

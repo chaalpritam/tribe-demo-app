@@ -165,7 +165,7 @@ export default function TweetComposer({
   return (
     <div className={compact ? "p-3" : "border-b border-gray-200 p-4"}>
       <textarea
-        className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-colors"
+        className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 text-[15px] text-gray-900 placeholder-gray-500 outline-none transition-colors focus:border-gray-900 focus:bg-white focus:ring-1 focus:ring-gray-900"
         rows={compact ? 2 : 3}
         placeholder={placeholder ?? (parentHash ? "Post your reply..." : "What's happening?")}
         value={text}

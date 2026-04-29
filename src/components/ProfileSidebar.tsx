@@ -233,7 +233,7 @@ export default function ProfileSidebar({
                 key={f.following_tid}
                 className="flex items-center gap-2 text-sm"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-blue-600">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-700">
                   {f.username
                     ? f.username[0].toUpperCase()
                     : f.following_tid}

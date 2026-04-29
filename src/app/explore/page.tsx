@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchUsers } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import FollowButton from "@/components/FollowButton";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface User {
   tid: string;
@@ -54,31 +57,33 @@ export default function ExplorePage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900">Explore</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Discover people on the Tribe network
-      </p>
+      <PageHeader
+        title="Explore"
+        subtitle="Discover people on the Tribe network"
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : error ? (
-        <div className="py-12 text-center">
-          <p className="text-gray-500">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-blue-600 hover:underline"
-          >
-            Retry
-          </button>
-        </div>
+        <EmptyState
+          title="Couldn't load users"
+          body={error}
+          action={
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm font-semibold text-blue-600 hover:underline"
+            >
+              Retry
+            </button>
+          }
+        />
       ) : users.length === 0 ? (
-        <div className="py-12 text-center text-gray-500">
-          No users found. Be the first to register!
-        </div>
+        <EmptyState
+          title="No users yet"
+          body="Be the first to register a Tribe identity."
+        />
       ) : (
-        <div className="mt-6 space-y-2">
+        <div className="space-y-2">
           {users.map((user) => {
             const tid = parseInt(user.tid, 10);
             const displayName = user.username
@@ -98,7 +103,7 @@ export default function ExplorePage() {
                   className="flex cursor-pointer items-center gap-3"
                   onClick={() => router.push(`/profile?tid=${user.tid}`)}
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-900/20 text-sm font-semibold text-blue-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
                     {initial}
                   </div>
                   <div>

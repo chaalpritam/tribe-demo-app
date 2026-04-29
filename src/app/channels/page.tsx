@@ -7,6 +7,9 @@ import { fetchChannels, fetchChannelFeed, fetchJoinedChannels } from "@/lib/api"
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import TweetComposer from "@/components/TweetComposer";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   signAndCreateChannel,
   signAndJoinChannel,
@@ -245,47 +248,53 @@ function ChannelsPage() {
   // Channels list view
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Channels</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Browse or create topic-based channels
-          </p>
-        </div>
-        {myTid !== null && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
-          >
-            + New
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Channels"
+        subtitle="Browse or create topic-based channels"
+        action={
+          myTid !== null ? (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+            >
+              + New channel
+            </button>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       ) : error ? (
-        <div className="py-12 text-center">
-          <p className="text-gray-500">{error}</p>
-          <button
-            onClick={() => setRefreshKey((k) => k + 1)}
-            className="mt-2 text-sm text-blue-600 hover:underline"
-          >
-            Retry
-          </button>
-        </div>
+        <EmptyState
+          title="Couldn't load channels"
+          body={error}
+          action={
+            <button
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="text-sm font-semibold text-blue-600 hover:underline"
+            >
+              Retry
+            </button>
+          }
+        />
       ) : channels.length === 0 ? (
-        <div className="mt-8 text-center">
-          <p className="text-gray-500">No channels yet.</p>
-          <p className="mt-1 text-sm text-gray-600">
-            Click <span className="text-blue-600">+ New</span> to create one,
-            or post a tweet with a channel.
-          </p>
-        </div>
+        <EmptyState
+          title="No channels yet"
+          body="Channels are topic-based feeds. Create one or post a tweet with a channel tag."
+          action={
+            myTid !== null ? (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                Create channel
+              </button>
+            ) : null
+          }
+        />
       ) : (
-        <div className="mt-6 space-y-2">
+        <div className="space-y-2">
           {channels.map((ch) => {
             const isJoined = joined.has(ch.id);
             return (
@@ -310,7 +319,7 @@ function ChannelsPage() {
                       </span>
                     )}
                     {isJoined && (
-                      <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-purple-300">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-700">
                         joined
                       </span>
                     )}
@@ -515,7 +524,7 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
                 onClick={() => setKind(ChannelKind.INTEREST)}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                   kind === ChannelKind.INTEREST
-                    ? "border-purple-500 bg-purple-500/20 text-purple-200"
+                    ? "border-gray-900 bg-gray-100 text-gray-900"
                     : "border-gray-200 bg-gray-100 text-gray-300 hover:bg-gray-700"
                 }`}
               >

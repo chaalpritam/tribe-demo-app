@@ -154,7 +154,7 @@ function ProfilePage() {
             <FollowButton myTid={myTid} targetTid={tid} />
           )}
           {isMe && (
-            <span className="rounded-full border border-gray-600 px-3 py-1 text-xs text-gray-500">
+            <span className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500">
               Your profile
             </span>
           )}
@@ -188,8 +188,8 @@ function ProfilePage() {
             onClick={() => setTab(t)}
             className={`flex-1 py-3 text-center text-sm font-semibold transition-colors ${
               tab === t
-                ? "border-b-2 border-gray-900 text-white"
-                : "text-gray-500 hover:text-gray-300"
+                ? "-mb-px border-b-2 border-gray-900 text-gray-900"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -330,7 +330,7 @@ function UserRow({
       className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900/20 text-xs font-semibold text-blue-600">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700">
           {initial}
         </div>
         <div>
