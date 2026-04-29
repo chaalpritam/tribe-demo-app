@@ -7,6 +7,17 @@ import { fetchChannels, fetchChannelFeed } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import TweetComposer from "@/components/TweetComposer";
+import {
+  signAndCreateChannel,
+  ChannelKind,
+  type ChannelKindValue,
+} from "@/lib/messages";
+
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+}
 
 export default function ChannelsPageWrapper() {
   return (
@@ -23,9 +34,14 @@ export default function ChannelsPageWrapper() {
 }
 
 interface Channel {
-  channel_id: string;
+  // Hub returns `id` (not `channel_id`) — the slug
+  id: string;
+  name: string | null;
+  description: string | null;
+  kind: number | null;
   tweet_count: number;
-  last_active: string;
+  member_count: number;
+  last_tweet_at: string | null;
 }
 
 interface Tweet {
@@ -49,6 +65,7 @@ function ChannelsPage() {
   const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
@@ -156,10 +173,22 @@ function ChannelsPage() {
   // Channels list view
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-white">Channels</h1>
-      <p className="mt-1 text-sm text-gray-400">
-        Browse topic-based channels
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Channels</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Browse or create topic-based channels
+          </p>
+        </div>
+        {myTid !== null && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
+          >
+            + New
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
@@ -179,30 +208,281 @@ function ChannelsPage() {
         <div className="mt-8 text-center">
           <p className="text-gray-500">No channels yet.</p>
           <p className="mt-1 text-sm text-gray-600">
-            Post a tweet with a channel to create one!
+            Click <span className="text-purple-400">+ New</span> to create one,
+            or post a tweet with a channel.
           </p>
         </div>
       ) : (
         <div className="mt-6 space-y-2">
           {channels.map((ch) => (
             <button
-              key={ch.channel_id}
-              onClick={() => router.push(`/channels?id=${encodeURIComponent(ch.channel_id)}`)}
+              key={ch.id}
+              onClick={() => router.push(`/channels?id=${encodeURIComponent(ch.id)}`)}
               className="flex w-full items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors hover:bg-gray-800/50"
             >
-              <div>
-                <p className="font-semibold text-white">#{ch.channel_id}</p>
-                <p className="text-xs text-gray-500">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-white">
+                    {ch.name ? ch.name : `#${ch.id}`}
+                  </p>
+                  {ch.name && (
+                    <span className="text-xs text-gray-500">#{ch.id}</span>
+                  )}
+                  {ch.kind === 2 && (
+                    <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-green-400">
+                      city
+                    </span>
+                  )}
+                </div>
+                {ch.description && (
+                  <p className="mt-0.5 truncate text-xs text-gray-500">
+                    {ch.description}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
                   {ch.tweet_count} {ch.tweet_count === 1 ? "post" : "posts"}
+                  {ch.member_count > 0 && (
+                    <> · {ch.member_count} {ch.member_count === 1 ? "member" : "members"}</>
+                  )}
                 </p>
               </div>
-              <span className="text-xs text-gray-500">
-                {getTimeAgo(new Date(ch.last_active))}
-              </span>
+              {ch.last_tweet_at && (
+                <span className="ml-3 shrink-0 text-xs text-gray-500">
+                  {getTimeAgo(new Date(ch.last_tweet_at))}
+                </span>
+              )}
             </button>
           ))}
         </div>
       )}
+
+      {showCreate && myTid !== null && (
+        <CreateChannelModal
+          tid={myTid}
+          onClose={() => setShowCreate(false)}
+          onCreated={(id) => {
+            setShowCreate(false);
+            setRefreshKey((k) => k + 1);
+            router.push(`/channels?id=${encodeURIComponent(id)}`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface CreateChannelModalProps {
+  tid: number;
+  onClose: () => void;
+  onCreated: (channelId: string) => void;
+}
+
+const CHANNEL_ID_RE = /^[a-z0-9-]{1,64}$/;
+
+function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps) {
+  const [channelId, setChannelId] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [kind, setKind] = useState<ChannelKindValue>(ChannelKind.INTEREST);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = useCallback(async () => {
+    setError(null);
+    const trimmedId = channelId.trim().toLowerCase();
+    if (!CHANNEL_ID_RE.test(trimmedId)) {
+      setError("Channel id must be 1–64 chars of a–z, 0–9, or hyphens.");
+      return;
+    }
+    if (trimmedId === "general") {
+      setError("\"general\" is reserved.");
+      return;
+    }
+    if (!name.trim()) {
+      setError("Name is required.");
+      return;
+    }
+
+    const appKey = loadAppKey();
+    if (!appKey) {
+      setError("No app key — register your identity first.");
+      return;
+    }
+
+    let lat: number | undefined;
+    let lon: number | undefined;
+    if (kind === ChannelKind.CITY) {
+      if (latitude.trim()) {
+        const n = Number(latitude);
+        if (Number.isFinite(n)) lat = n;
+      }
+      if (longitude.trim()) {
+        const n = Number(longitude);
+        if (Number.isFinite(n)) lon = n;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      await signAndCreateChannel({
+        tid,
+        channelId: trimmedId,
+        name: name.trim(),
+        description: description.trim() || undefined,
+        kind,
+        latitude: lat,
+        longitude: lon,
+        signingKeySecret: appKey,
+      });
+      onCreated(trimmedId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create channel");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [channelId, name, description, kind, latitude, longitude, tid, onCreated]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white">New channel</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-500 hover:text-white"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-400">
+              Channel id <span className="text-gray-600">(slug, a–z 0–9 hyphens)</span>
+            </label>
+            <input
+              type="text"
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+              placeholder="solana-devs"
+              maxLength={64}
+              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-sm text-white outline-none focus:border-purple-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-400">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Solana Developers"
+              maxLength={80}
+              className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-400">
+              Description <span className="text-gray-600">(optional)</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              maxLength={300}
+              className="mt-1 w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-400">Kind</label>
+            <div className="mt-1 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setKind(ChannelKind.INTEREST)}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  kind === ChannelKind.INTEREST
+                    ? "border-purple-500 bg-purple-500/20 text-purple-200"
+                    : "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                Interest
+              </button>
+              <button
+                type="button"
+                onClick={() => setKind(ChannelKind.CITY)}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                  kind === ChannelKind.CITY
+                    ? "border-green-500 bg-green-500/20 text-green-200"
+                    : "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+              >
+                City
+              </button>
+            </div>
+          </div>
+
+          {kind === ChannelKind.CITY && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-400">
+                  Latitude
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  placeholder="37.7749"
+                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400">
+                  Longitude
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  placeholder="-122.4194"
+                  className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-600"
+                />
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">
+              {error}
+            </p>
+          )}
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              {submitting ? "Creating…" : "Create channel"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
