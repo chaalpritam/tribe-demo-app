@@ -431,6 +431,19 @@ function CreateChannelModal({ tid, onClose, onCreated }: CreateChannelModalProps
         longitude: lon,
         signingKeySecret: appKey,
       });
+      // Auto-join: the protocol's CHANNEL_ADD doesn't imply membership
+      // for the creator, but UX-wise people expect to be in the channel
+      // they just made. Best-effort — failure here doesn't fail the
+      // whole create.
+      try {
+        await signAndJoinChannel({
+          tid,
+          channelId: trimmedId,
+          signingKeySecret: appKey,
+        });
+      } catch (joinErr) {
+        console.warn("Auto-join after channel create failed:", joinErr);
+      }
       onCreated(trimmedId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create channel");
