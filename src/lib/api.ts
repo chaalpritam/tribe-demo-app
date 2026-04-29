@@ -543,6 +543,34 @@ export async function fetchDmMessages(
   return { messages };
 }
 
+export interface DmReadReceipt {
+  tid: string;
+  last_read_hash: string;
+  last_read_at: string;
+}
+
+export async function fetchDmReads(
+  conversationId: string,
+): Promise<{ reads: DmReadReceipt[] }> {
+  const res = await hubFetch(
+    `/v1/dm/conversations/${encodeURIComponent(conversationId)}/reads`,
+  );
+  if (!res.ok) return { reads: [] };
+  const raw = (await res.json()) as {
+    reads?: Array<{
+      tid: number | string;
+      last_read_hash: string;
+      last_read_at: string;
+    }>;
+  };
+  const reads = (raw.reads ?? []).map((r) => ({
+    tid: String(r.tid),
+    last_read_hash: r.last_read_hash,
+    last_read_at: r.last_read_at,
+  }));
+  return { reads };
+}
+
 export async function fetchFollowing(tid: string) {
   const res = await hubFetch(`/v1/following/${tid}`);
   if (!res.ok) throw new Error(`Failed to fetch following: ${res.statusText}`);

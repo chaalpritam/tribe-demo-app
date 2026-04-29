@@ -7,18 +7,21 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchConversations,
   fetchDmMessages,
+  fetchDmReads,
   getDmKey,
   fetchUserGroups,
   fetchGroup,
   fetchGroupMessages,
   type DmGroupRow,
   type DmGroupMessage,
+  type DmReadReceipt,
 } from "@/lib/api";
 import {
   signAndRegisterDmKey,
   signAndSendDm,
   signAndCreateGroup,
   signAndSendGroupMessage,
+  signAndMarkRead,
 } from "@/lib/messages";
 import { getDmPublicKey, encryptMessage, decryptMessage } from "@/lib/crypto";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -80,6 +83,7 @@ function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [reads, setReads] = useState<DmReadReceipt[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
@@ -109,14 +113,40 @@ function MessagesPage() {
       .finally(() => setLoading(false));
   }, [myTid, convId, newTid, groupId]);
 
-  // Load messages for a conversation
+  // Load messages + read receipts for a conversation
   useEffect(() => {
     if (!convId || !myTid) return;
     setLoading(true);
-    fetchDmMessages(convId, myTid)
-      .then((data) => setMessages(data?.messages ?? []))
+    Promise.all([fetchDmMessages(convId, myTid), fetchDmReads(convId)])
+      .then(([msgData, readData]) => {
+        setMessages(msgData?.messages ?? []);
+        setReads(readData?.reads ?? []);
+      })
       .finally(() => setLoading(false));
   }, [convId, myTid]);
+
+  // Send a DM_READ when the latest visible message in this conversation
+  // came from someone else and we haven't already marked it read.
+  useEffect(() => {
+    if (!convId || !myTid || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.sender_tid === myTid) return;
+    const myRead = reads.find((r) => r.tid === myTid);
+    if (myRead && myRead.last_read_hash === last.id) return;
+    const appKey = loadAppKey();
+    if (!appKey) return;
+    signAndMarkRead({
+      tid: parseInt(myTid, 10),
+      conversationId: convId,
+      lastReadHash: last.id,
+      signingKeySecret: appKey,
+    })
+      .then(() => fetchDmReads(convId))
+      .then((data) => setReads(data?.reads ?? []))
+      .catch((err) => {
+        console.warn("DM read mark failed:", err);
+      });
+  }, [convId, myTid, messages, reads]);
 
   // Load recipient key for new conversation
   useEffect(() => {
@@ -214,32 +244,72 @@ function MessagesPage() {
           ) : messages.length === 0 ? (
             <p className="text-center text-gray-500">No messages yet. Say hi!</p>
           ) : (
-            <div className="space-y-3">
-              {messages.map((msg) => {
-                const isMe = msg.sender_tid === myTid;
-                let text = "[encrypted]";
-                if (otherPubkey) {
-                  // NaCl box decryption always needs the OTHER party's public key
-                  // regardless of who sent the message
-                  const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, otherPubkey);
-                  if (decrypted) text = decrypted;
+            (() => {
+              // The other party's last_read_at, if any. Show "Seen" on
+              // my outgoing messages whose timestamp is at or before
+              // that mark; everything newer shows "Sent".
+              const otherRead = otherTid
+                ? reads.find((r) => r.tid === otherTid)
+                : undefined;
+              const otherReadMs = otherRead
+                ? new Date(otherRead.last_read_at).getTime()
+                : 0;
+              const myMessageIndices = messages
+                .map((m, i) => (m.sender_tid === myTid ? i : -1))
+                .filter((i) => i >= 0);
+              const lastMyIdx =
+                myMessageIndices.length > 0
+                  ? myMessageIndices[myMessageIndices.length - 1]
+                  : -1;
+              const lastSeenMyIdx = (() => {
+                if (otherReadMs <= 0) return -1;
+                let idx = -1;
+                for (const i of myMessageIndices) {
+                  const ts = new Date(messages[i].created_at).getTime();
+                  if (ts <= otherReadMs) idx = i;
                 }
-                return (
-                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-xs rounded-2xl px-4 py-2 ${
-                        isMe ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-200"
-                      }`}
-                    >
-                      <p className="text-sm">{text}</p>
-                      <p className="mt-1 text-xs opacity-50">
-                        {new Date(msg.created_at).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                return idx;
+              })();
+              return (
+                <div className="space-y-3">
+                  {messages.map((msg, i) => {
+                    const isMe = msg.sender_tid === myTid;
+                    let text = "[encrypted]";
+                    if (otherPubkey) {
+                      const decrypted = decryptMessage(
+                        msg.encrypted_text,
+                        msg.nonce,
+                        otherPubkey,
+                      );
+                      if (decrypted) text = decrypted;
+                    }
+                    let receiptLabel: string | null = null;
+                    if (isMe && i === lastMyIdx) {
+                      receiptLabel = i <= lastSeenMyIdx ? "Seen" : "Sent";
+                    }
+                    return (
+                      <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                        <div
+                          className={`max-w-xs rounded-2xl px-4 py-2 ${
+                            isMe ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-200"
+                          }`}
+                        >
+                          <p className="text-sm">{text}</p>
+                          <p className="mt-1 text-xs opacity-50">
+                            {new Date(msg.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        {receiptLabel && (
+                          <p className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">
+                            {receiptLabel}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
           )}
         </div>
 
