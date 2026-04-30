@@ -16,6 +16,11 @@ interface TweetCardProps {
   timestamp: number;
   hash?: string;
   username?: string;
+  /** Latest USER_DATA_ADD `displayName` for the author. Wins over the
+   *  `${username}.tribe` fallback so a user's published display name
+   *  shows up immediately on every card. */
+  displayName?: string;
+  pfpUrl?: string;
   myTid?: number;
   replyCount?: number;
   embeds?: string[];
@@ -40,6 +45,7 @@ export default function TweetCard({
   timestamp,
   hash,
   username,
+  displayName: displayNameProp,
   myTid,
   replyCount,
   embeds,
@@ -47,8 +53,11 @@ export default function TweetCard({
 }: TweetCardProps) {
   const date = new Date(timestamp * 1000);
   const timeAgo = getTimeAgo(date);
-  const displayName = username ? `${username}.tribe` : `TID #${tid}`;
-  const initial = username ? username[0].toUpperCase() : String(tid);
+  const displayName =
+    displayNameProp?.trim() ||
+    (username ? `${username}.tribe` : `TID #${tid}`);
+  const initial = (displayNameProp?.trim() || username || String(tid))[0]
+    .toUpperCase();
   const isOwn = myTid !== undefined && myTid === tid;
   const [hidden, setHidden] = useState(false);
   const [deleting, setDeleting] = useState(false);

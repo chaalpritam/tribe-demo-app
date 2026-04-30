@@ -11,6 +11,10 @@ interface Tweet {
   text?: string;
   timestamp?: string | number;
   username?: string | null;
+  /** Latest USER_DATA_ADD displayName for the author, joined in by
+   *  the hub's feed query (null when the user never published one). */
+  display_name?: string | null;
+  pfp_url?: string | null;
   reply_count?: number;
   embeds?: string[];
 }
@@ -125,6 +129,8 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
             timestamp={tweetTimestamp}
             hash={tweet.hash}
             username={tweet.username ?? undefined}
+            displayName={tweet.display_name ?? undefined}
+            pfpUrl={tweet.pfp_url ?? undefined}
             myTid={myTid}
             replyCount={tweet.reply_count}
             embeds={tweet.embeds}
