@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchUser,
@@ -13,18 +12,7 @@ import {
 import { erFollow } from "@/lib/er-client";
 import LogoutButton from "./LogoutButton";
 
-const WalletButton = dynamic(
-  async () => {
-    const { WalletMultiButton } = await import(
-      "@solana/wallet-adapter-react-ui"
-    );
-    return { default: WalletMultiButton };
-  },
-  {
-    ssr: false,
-    loading: () => <div className="h-10 w-full rounded-lg bg-gray-200" />,
-  }
-);
+import WalletButton from "./WalletButton";
 
 interface ProfileSidebarProps {
   tid: string;
@@ -122,16 +110,7 @@ export default function ProfileSidebar({
     <div className="space-y-4">
       {/* Wallet card — sits above profile details */}
       <div className="rounded-xl border border-gray-200 bg-white p-3">
-        <WalletButton
-          style={{
-            backgroundColor: "#18181b",
-            borderRadius: "0.5rem",
-            fontSize: "0.875rem",
-            height: "2.5rem",
-            width: "100%",
-            justifyContent: "center",
-          }}
-        />
+        <WalletButton className="w-full justify-center" />
         <LogoutButton />
       </div>
 

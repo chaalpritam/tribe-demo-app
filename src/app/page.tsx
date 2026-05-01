@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { getTidByCustody } from "@/lib/tribe";
@@ -12,18 +11,7 @@ import Feed from "@/components/Feed";
 import RegisterIdentity from "@/components/RegisterIdentity";
 import ImportBackup from "@/components/ImportBackup";
 
-const WalletButton = dynamic(
-  async () => {
-    const { WalletMultiButton } = await import(
-      "@solana/wallet-adapter-react-ui"
-    );
-    return { default: WalletMultiButton };
-  },
-  {
-    ssr: false,
-    loading: () => <div className="mt-10 h-10 w-40 rounded-lg bg-gray-200" />,
-  }
-);
+import WalletButton from "@/components/WalletButton";
 
 export default function Home() {
   const { publicKey, connected } = useWallet();
@@ -130,15 +118,7 @@ export default function Home() {
           Connect your wallet to get started
         </p>
         <div className="mt-4 flex flex-col items-center gap-4">
-          <WalletButton
-            style={{
-              backgroundColor: "#18181b",
-              borderRadius: "0.5rem",
-              fontSize: "0.875rem",
-              height: "2.75rem",
-              padding: "0 1.25rem",
-            }}
-          />
+        <WalletButton className="h-11 px-8 text-base" />
           <ImportBackup />
         </div>
       </div>
