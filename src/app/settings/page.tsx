@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from "@/lib/constants";
 import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 import MobilePairingPanel from "@/components/MobilePairingPanel";
+import { createBackupPayload, downloadBackupFile, encryptBackup } from "@/lib/backup";
 
 interface ProfileForm {
   displayName: string;
@@ -42,6 +43,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  
+  const [backupPassword, setBackupPassword] = useState("");
+  const [isEncrypting, setIsEncrypting] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
@@ -137,6 +141,35 @@ export default function SettingsPage() {
       setSaving(false);
     }
   }, [myTid, form, original]);
+
+  const handleBackup = useCallback(async () => {
+    try {
+      const payload = createBackupPayload();
+      const filename = form.displayName || myTid || "tribe-account";
+      
+      if (backupPassword) {
+        setIsEncrypting(true);
+        const encrypted = await encryptBackup(payload, backupPassword);
+        const blob = new Blob([encrypted], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${filename}.tribe.enc`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setMessage("Encrypted backup downloaded");
+      } else {
+        downloadBackupFile(payload, filename);
+        setMessage("Backup downloaded");
+      }
+    } catch (err) {
+      setMessage("Backup failed: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsEncrypting(false);
+    }
+  }, [form.displayName, myTid, backupPassword]);
 
   if (!connected) {
     return (
@@ -251,6 +284,37 @@ export default function SettingsPage() {
             {message}
           </p>
         )}
+
+        <div className="mt-10 border-t border-gray-100 pt-10">
+          <h2 className="text-xl font-bold text-gray-900">Backup Account</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Export your account keys to a file. You can use this to restore your account on another device.
+          </p>
+          
+          <div className="mt-6 space-y-4">
+            <Field
+              label="Backup Password (Optional)"
+              value={backupPassword}
+              onChange={setBackupPassword}
+              placeholder="Leave empty for unencrypted backup"
+              type="password"
+            />
+            
+            <button
+              onClick={handleBackup}
+              disabled={isEncrypting}
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-semibold text-gray-900 transition-colors hover:bg-gray-50 disabled:opacity-50"
+            >
+              {isEncrypting ? "Encrypting..." : "Download Backup (.tribe)"}
+            </button>
+            
+            {backupPassword && (
+              <p className="text-xs text-amber-600">
+                ⚠️ Make sure to remember your password. You won't be able to restore the backup without it.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <MobilePairingPanel />
@@ -266,6 +330,7 @@ interface FieldProps {
   maxLength?: number;
   rows?: number;
   showCharCount?: boolean;
+  type?: string;
 }
 
 function Field({
@@ -276,6 +341,7 @@ function Field({
   maxLength,
   rows,
   showCharCount,
+  type = "text",
 }: FieldProps) {
   const inputClass =
     "mt-1 w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900";
@@ -293,7 +359,7 @@ function Field({
         />
       ) : (
         <input
-          type="text"
+          type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
