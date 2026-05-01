@@ -36,7 +36,7 @@ export const BROWSER_WALLET_READY = "tribe:browser-wallet-ready";
 
 export class BrowserWalletAdapter extends BaseMessageSignerWalletAdapter {
   name = BROWSER_WALLET_NAME;
-  url = "";
+  url = "https://tribe.fun";
   icon = browserWalletIcon();
   supportedTransactionVersions = new Set(["legacy" as const, 0 as const]);
 
