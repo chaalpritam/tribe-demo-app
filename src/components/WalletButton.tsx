@@ -1,7 +1,7 @@
 "use client";
 
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { BROWSER_WALLET_NAME, BROWSER_WALLET_SETUP_REQUIRED } from "@/lib/browser-wallet/adapter";
 import { hasStoredKeypair } from "@/lib/browser-wallet/keypair-store";
 
@@ -11,25 +11,12 @@ interface WalletButtonProps {
 }
 
 export default function WalletButton({ className = "", label }: WalletButtonProps) {
-  const { select, connect, disconnect, publicKey, connected, connecting, wallet } = useWallet();
+  const { select, connect, disconnect, publicKey, connected, connecting } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
-
-  // Auto-connect for returning users if they already have a keypair
-  useEffect(() => {
-    if (!connected && !connecting && hasStoredKeypair()) {
-      // If we previously selected Browser Wallet, it will be in state
-      if (wallet?.adapter.name === BROWSER_WALLET_NAME) {
-        connect().catch(() => {});
-      } else {
-        // Force selection if it's the only wallet
-        select(BROWSER_WALLET_NAME);
-      }
-    }
-  }, [connected, connecting, wallet, select, connect]);
 
   const handleConnect = useCallback(async () => {
     try {
-      // 1. Ensure it's selected
+      // 1. Force select the browser wallet
       select(BROWSER_WALLET_NAME);
       
       // 2. Check if we have a local keypair
@@ -38,7 +25,7 @@ export default function WalletButton({ className = "", label }: WalletButtonProp
         return;
       }
 
-      // 3. Connect (the useEffect above might also handle this, but explicit is better)
+      // 3. Connect immediately
       await connect();
     } catch (error) {
       console.error("Connection failed", error);

@@ -14,7 +14,7 @@ import ImportBackup from "@/components/ImportBackup";
 import WalletButton from "@/components/WalletButton";
 
 export default function Home() {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, connecting } = useWallet();
   const { connection } = useConnection();
   const [tid, setTid] = useState<number | null>(null);
   const [hasAppKey, setHasAppKey] = useState(false);
@@ -24,14 +24,18 @@ export default function Home() {
 
   const checkTid = useCallback(async () => {
     if (!publicKey) return;
+    console.log("[Tribe] Checking identity for wallet:", publicKey.toBase58());
     setLoading(true);
     try {
       const walletKey = publicKey.toBase58();
       const storedTid = localStorage.getItem(STORAGE_KEYS.tid);
       const storedWallet = localStorage.getItem(STORAGE_KEYS.tidWallet);
 
+      console.log("[Tribe] Stored TID:", storedTid, "Stored Wallet:", storedWallet);
+
       // Use cached TID only if it belongs to the current wallet
       if (storedTid && storedWallet === walletKey) {
+        console.log("[Tribe] Using cached identity");
         setTid(parseInt(storedTid, 10));
         setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
         setLoading(false);
@@ -40,21 +44,26 @@ export default function Home() {
 
       // Clear stale cache from a different wallet
       if (storedTid && storedWallet !== walletKey) {
+        console.log("[Tribe] Clearing stale identity cache");
         localStorage.removeItem(STORAGE_KEYS.tid);
         localStorage.removeItem(STORAGE_KEYS.appKeySecret);
         localStorage.removeItem(STORAGE_KEYS.tidWallet);
       }
 
       // Check on-chain
+      console.log("[Tribe] Fetching identity from chain...");
       const onChainTid = await getTidByCustody(connection, publicKey);
       if (onChainTid !== null) {
+        console.log("[Tribe] Found TID on-chain:", onChainTid);
         setTid(onChainTid);
         localStorage.setItem(STORAGE_KEYS.tid, onChainTid.toString());
         localStorage.setItem(STORAGE_KEYS.tidWallet, walletKey);
         setHasAppKey(!!localStorage.getItem(STORAGE_KEYS.appKeySecret));
+      } else {
+        console.log("[Tribe] No TID found for this wallet");
       }
-    } catch {
-      // TID not found
+    } catch (err) {
+      console.error("[Tribe] Error checking identity:", err);
     } finally {
       setLoading(false);
     }
@@ -78,8 +87,48 @@ export default function Home() {
     setHasAppKey(true);
   }, []);
 
-  // Not connected - hero section
+  // Not connected - show welcome or loading
   if (!connected) {
+    if (connecting) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-900 border-t-transparent" />
+          <h2 className="mt-6 text-xl font-bold text-gray-900">Connecting...</h2>
+          <p className="mt-2 text-gray-500">Checking your local account</p>
+        </div>
+      );
+    }
+
+    const hasExistingAccount = typeof window !== "undefined" && !!localStorage.getItem(STORAGE_KEYS.tid);
+    
+    if (hasExistingAccount) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-900 text-3xl font-bold text-white">
+            T
+          </div>
+          <h1 className="mt-6 text-4xl font-bold text-gray-900">
+            Welcome back to Tribe
+          </h1>
+          <p className="mt-3 max-w-md text-lg text-gray-600">
+            Your account is ready. Connect your browser wallet to continue.
+          </p>
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <WalletButton className="h-11 px-8 text-base" label="Connect & Enter" />
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4"
+            >
+              Logout and use a different account
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-4">
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-900 text-3xl font-bold text-white">
