@@ -26,19 +26,24 @@ export default function ConnectionRequired({
     const exists = !!localStorage.getItem(STORAGE_KEYS.tid);
     setHasExistingAccount(exists);
     
-    // Proactively trigger connection if we have an account but aren't connected
+    // Proactively trigger selection if we have an account but no wallet selected
     if (exists && !connected && !connecting && !hasAttempted && !connectionError) {
-      if (!wallet) {
-        select(BROWSER_WALLET_NAME);
-      } else if (wallet.adapter.name === BROWSER_WALLET_NAME) {
+      if (!wallet || wallet.adapter.name !== BROWSER_WALLET_NAME) {
         setHasAttempted(true);
-        connect().catch((e) => {
-          console.warn("[Tribe] Connection background attempt:", e);
-          setConnectionError(true);
-        });
+        select(BROWSER_WALLET_NAME);
       }
+      
+      // If after 3 seconds we are still not connected, assume connection failed
+      // (e.g. keypair missing from backup)
+      const timeout = setTimeout(() => {
+        if (!connected) {
+          setConnectionError(true);
+        }
+      }, 3000);
+      
+      return () => clearTimeout(timeout);
     }
-  }, [connected, connecting, select, connect, wallet, hasAttempted, connectionError]);
+  }, [connected, connecting, select, wallet, hasAttempted, connectionError]);
 
   if (connected) {
     return <>{children}</>;
