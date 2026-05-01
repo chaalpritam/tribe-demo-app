@@ -9,6 +9,7 @@ import FollowButton from "@/components/FollowButton";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 interface User {
   tid: string;
@@ -47,16 +48,12 @@ export default function ExplorePage() {
     load();
   }, []);
 
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Connect your wallet to explore users</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <ConnectionRequired 
+      title="Explore" 
+      description="Connect your wallet to discover new people and communities on Tribe."
+    >
+      <div className="mx-auto max-w-2xl px-4 py-6">
       <PageHeader
         title="Explore"
         subtitle="Discover people on the Tribe network"
@@ -135,5 +132,6 @@ export default function ExplorePage() {
         </div>
       )}
     </div>
+    </ConnectionRequired>
   );
 }

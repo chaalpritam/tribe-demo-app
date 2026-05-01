@@ -25,6 +25,7 @@ import {
 } from "@/lib/messages";
 import { getDmPublicKey, encryptMessage, decryptMessage } from "@/lib/crypto";
 import { STORAGE_KEYS } from "@/lib/constants";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 const GROUP_ID_RE = /^[a-z0-9-]{1,64}$/;
 
@@ -213,251 +214,167 @@ function MessagesPage() {
     }
   }, [myTid, messageInput, sending, newTid, otherTid, otherPubkey, convId]);
 
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Connect your wallet to use messages</p>
-      </div>
-    );
-  }
-
-  // Group conversation view — separate flow because the wire format
-  // differs from 1:1 (per-recipient ciphertexts) and the recipient
-  // set is N peers instead of one.
-  if (groupId && myTid) {
-    return <GroupConversationView groupId={groupId} myTid={myTid} />;
-  }
-
-  // Conversation view
-  if (convId || newTid) {
-    const recipientName = newTid ? `TID #${newTid}` : `TID #${otherTid}`;
-
-    return (
-      <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "100vh" }}>
-        <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
-          <Link href="/messages" className="text-gray-500 hover:text-gray-900">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <h2 className="font-semibold text-gray-900">{recipientName}</h2>
-          {!otherPubkey && (
-            <span className="text-xs text-amber-700">No encryption key registered</span>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-4">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-            </div>
-          ) : messages.length === 0 ? (
-            <p className="text-center text-gray-500">No messages yet. Say hi!</p>
-          ) : (
-            (() => {
-              // The other party's last_read_at, if any. Show "Seen" on
-              // my outgoing messages whose timestamp is at or before
-              // that mark; everything newer shows "Sent".
-              const otherRead = otherTid
-                ? reads.find((r) => r.tid === otherTid)
-                : undefined;
-              const otherReadMs = otherRead
-                ? new Date(otherRead.last_read_at).getTime()
-                : 0;
-              const myMessageIndices = messages
-                .map((m, i) => (m.sender_tid === myTid ? i : -1))
-                .filter((i) => i >= 0);
-              const lastMyIdx =
-                myMessageIndices.length > 0
-                  ? myMessageIndices[myMessageIndices.length - 1]
-                  : -1;
-              const lastSeenMyIdx = (() => {
-                if (otherReadMs <= 0) return -1;
-                let idx = -1;
-                for (const i of myMessageIndices) {
-                  const ts = new Date(messages[i].created_at).getTime();
-                  if (ts <= otherReadMs) idx = i;
-                }
-                return idx;
-              })();
-              return (
-                <div className="space-y-3">
-                  {messages.map((msg, i) => {
-                    const isMe = msg.sender_tid === myTid;
-                    let text = "[encrypted]";
-                    if (otherPubkey) {
-                      const decrypted = decryptMessage(
-                        msg.encrypted_text,
-                        msg.nonce,
-                        otherPubkey,
-                      );
-                      if (decrypted) text = decrypted;
-                    }
-                    let receiptLabel: string | null = null;
-                    if (isMe && i === lastMyIdx) {
-                      receiptLabel = i <= lastSeenMyIdx ? "Seen" : "Sent";
-                    }
-                    return (
-                      <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                        <div
-                          className={`max-w-xs rounded-2xl px-4 py-2 ${
-                            isMe ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          <p className="text-sm">{text}</p>
-                          <p className="mt-1 text-xs opacity-50">
-                            {new Date(msg.created_at).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        {receiptLabel && (
-                          <p className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">
-                            {receiptLabel}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()
-          )}
-        </div>
-
-        {error && (
-          <p className="border-t border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error}
-          </p>
-        )}
-        <div className="flex gap-2 border-t border-gray-200 pt-3">
-          <input
-            type="text"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={otherPubkey ? "Type a message..." : "Recipient has no DM key"}
-            disabled={!otherPubkey}
-            className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900 disabled:opacity-50"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!messageInput.trim() || sending || !otherPubkey}
-            className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-          >
-            Send
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Conversations list
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        {myTid && (
-          <button
-            onClick={() => setShowCreateGroup(true)}
-            className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-          >
-            + Group
-          </button>
-        )}
-      </div>
+    <ConnectionRequired 
+      title="Messages" 
+      description="Connect your wallet to send and receive private messages."
+    >
+      {(() => {
+        if (groupId && myTid) {
+          return <GroupConversationView groupId={groupId} myTid={myTid} />;
+        }
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-        </div>
-      ) : conversations.length === 0 && groups.length === 0 ? (
-        <p className="mt-8 text-center text-gray-500">
-          No conversations yet. Start one from a user&apos;s profile, or
-          create a group with <span className="text-blue-600">+ Group</span>.
-        </p>
-      ) : (
-        <>
-          {groups.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Groups
+        if (convId || newTid) {
+          const recipientName = newTid ? `TID #${newTid}` : `TID #${otherTid}`;
+          return (
+            <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "100vh" }}>
+              <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
+                <Link href="/messages" className="text-gray-500 hover:text-gray-900">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </Link>
+                <h2 className="font-semibold text-gray-900">{recipientName}</h2>
+                {!otherPubkey && (
+                  <span className="text-xs text-amber-700">No encryption key registered</span>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-4">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <p className="text-center text-gray-500">No messages yet. Say hi!</p>
+                ) : (
+                  <div className="space-y-3">
+                    {messages.map((msg, i) => {
+                      const isMe = msg.sender_tid === myTid;
+                      let text = "[encrypted]";
+                      if (otherPubkey) {
+                        const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, otherPubkey);
+                        if (decrypted) text = decrypted;
+                      }
+                      return (
+                        <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                          <div className={`max-w-xs rounded-2xl px-4 py-2 ${isMe ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"}`}>
+                            <p className="text-sm">{text}</p>
+                            <p className="mt-1 text-xs opacity-50">{new Date(msg.created_at).toLocaleTimeString()}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {error && (
+                <p className="border-t border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+              )}
+              <div className="flex gap-2 border-t border-gray-200 pt-3">
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                  placeholder={otherPubkey ? "Type a message..." : "Recipient has no DM key"}
+                  disabled={!otherPubkey}
+                  className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900 disabled:opacity-50"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!messageInput.trim() || sending || !otherPubkey}
+                  className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="mx-auto max-w-2xl px-4 py-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+              {myTid && (
+                <button
+                  onClick={() => setShowCreateGroup(true)}
+                  className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  + Group
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+              </div>
+            ) : conversations.length === 0 && groups.length === 0 ? (
+              <p className="mt-8 text-center text-gray-500">
+                No conversations yet. Start one from a user&apos;s profile.
               </p>
-              <div className="rounded-xl border border-gray-200 bg-white">
-                {groups.map((g) => (
-                  <Link
-                    key={g.id}
-                    href={`/messages?group=${encodeURIComponent(g.id)}`}
-                    className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-600">
-                        {g.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{g.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {g.member_count} {g.member_count === 1 ? "member" : "members"}
-                        </p>
-                      </div>
+            ) : (
+              <>
+                {groups.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Groups</p>
+                    <div className="rounded-xl border border-gray-200 bg-white">
+                      {groups.map((g) => (
+                        <Link key={g.id} href={`/messages?group=${encodeURIComponent(g.id)}`} className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-600">
+                              {g.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{g.name}</p>
+                              <p className="text-xs text-gray-500">{g.member_count} members</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
-                    <span className="text-xs text-gray-500">#{g.id}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+                  </div>
+                )}
+                {conversations.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Direct messages</p>
+                    <div className="rounded-xl border border-gray-200 bg-white">
+                      {conversations.map((conv) => (
+                        <Link key={conv.id} href={`/messages?conv=${conv.id}`} className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
+                              {conv.other_username?.[0]?.toUpperCase() ?? conv.other_tid}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{conv.other_username ? `${conv.other_username}.tribe` : `TID #${conv.other_tid}`}</p>
+                              <p className="text-xs text-gray-500">{conv.message_count} messages</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-          {conversations.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Direct messages
-              </p>
-              <div className="rounded-xl border border-gray-200 bg-white">
-                {conversations.map((conv) => {
-                  const name = conv.other_username
-                    ? `${conv.other_username}.tribe`
-                    : `TID #${conv.other_tid}`;
-                  return (
-                    <Link
-                      key={conv.id}
-                      href={`/messages?conv=${conv.id}`}
-                      className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
-                          {conv.other_username?.[0]?.toUpperCase() ?? conv.other_tid}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{name}</p>
-                          <p className="text-xs text-gray-500">
-                            {conv.message_count} messages
-                          </p>
-                        </div>
-                      </div>
-                      {conv.last_message_at && (
-                        <span className="text-xs text-gray-500">
-                          {new Date(conv.last_message_at).toLocaleDateString()}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {showCreateGroup && myTid && (
-        <CreateGroupModal
-          myTid={myTid}
-          onClose={() => setShowCreateGroup(false)}
-          onCreated={(id) => {
-            setShowCreateGroup(false);
-            window.location.href = `/messages?group=${encodeURIComponent(id)}`;
-          }}
-        />
-      )}
-    </div>
+            {showCreateGroup && myTid && (
+              <CreateGroupModal
+                myTid={myTid}
+                onClose={() => setShowCreateGroup(false)}
+                onCreated={(id) => {
+                  setShowCreateGroup(false);
+                  window.location.href = `/messages?group=${encodeURIComponent(id)}`;
+                }}
+              />
+            )}
+          </div>
+        );
+      })()}
+    </ConnectionRequired>
   );
 }
 

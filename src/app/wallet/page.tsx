@@ -24,6 +24,7 @@ import {
 import { STORAGE_KEYS } from "@/lib/constants";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 type ActivityRow = TipRow & { direction: "sent" | "received" };
 
@@ -97,16 +98,12 @@ export default function WalletPage() {
     refreshActivity();
   }, [refreshActivity]);
 
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-gray-500">Connect your wallet to view this page</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <ConnectionRequired 
+      title="Wallet" 
+      description="Connect your wallet to manage your SOL, send tips, and view your transaction history."
+    >
+      <div className="mx-auto max-w-2xl px-4 py-6">
       <PageHeader
         title="Wallet"
         subtitle="Send, receive, and view tip activity"
@@ -204,6 +201,7 @@ export default function WalletPage() {
         />
       )}
     </div>
+    </ConnectionRequired>
   );
 }
 

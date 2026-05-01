@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchNotifications } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 type NotificationType =
   | "follow"
@@ -158,16 +159,12 @@ export default function NotificationsPage() {
     setLastSeen(now);
   };
 
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Connect your wallet to view notifications</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <ConnectionRequired 
+      title="Notifications" 
+      description="Connect your wallet to see your notifications and social activity."
+    >
+      <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
         {hasUnread && (
@@ -253,6 +250,7 @@ export default function NotificationsPage() {
         </div>
       )}
     </div>
+    </ConnectionRequired>
   );
 }
 

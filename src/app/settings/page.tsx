@@ -8,6 +8,7 @@ import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 import MobilePairingPanel from "@/components/MobilePairingPanel";
 import LogoutButton from "@/components/LogoutButton";
 import { createBackupPayload, downloadBackupFile, encryptBackup } from "@/lib/backup";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 interface ProfileForm {
   displayName: string;
@@ -172,22 +173,6 @@ export default function SettingsPage() {
     }
   }, [form.displayName, myTid, backupPassword]);
 
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Connect your wallet to edit your profile</p>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-lg px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
@@ -327,6 +312,7 @@ export default function SettingsPage() {
 
       <MobilePairingPanel />
     </div>
+    </ConnectionRequired>
   );
 }
 

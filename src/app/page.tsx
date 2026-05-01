@@ -87,43 +87,24 @@ export default function Home() {
     setHasAppKey(true);
   }, []);
 
-  // Not connected - show welcome or loading
+  // Not connected - show hero or loading
   if (!connected) {
-    if (connecting) {
+    const hasExistingAccount = typeof window !== "undefined" && !!localStorage.getItem(STORAGE_KEYS.tid);
+    
+    // If we have an account, we should be connecting. If not, the WalletButton 
+    // inside our Providers (via autoConnect) or a manual trigger should handle it.
+    if (hasExistingAccount || connecting) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-900 border-t-transparent" />
-          <h2 className="mt-6 text-xl font-bold text-gray-900">Connecting...</h2>
-          <p className="mt-2 text-gray-500">Checking your local account</p>
-        </div>
-      );
-    }
-
-    const hasExistingAccount = typeof window !== "undefined" && !!localStorage.getItem(STORAGE_KEYS.tid);
-    
-    if (hasExistingAccount) {
-      return (
-        <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-900 text-3xl font-bold text-white">
-            T
-          </div>
-          <h1 className="mt-6 text-4xl font-bold text-gray-900">
-            Welcome back to Tribe
-          </h1>
-          <p className="mt-3 max-w-md text-lg text-gray-600">
-            Your account is ready. Connect your browser wallet to continue.
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-4">
-            <WalletButton className="h-11 px-8 text-base" label="Connect & Enter" />
-            <button 
-              onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}
-              className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4"
-            >
-              Logout and use a different account
-            </button>
+          <h2 className="mt-6 text-xl font-bold text-gray-900">
+            {connecting ? "Connecting..." : "Waking up your account..."}
+          </h2>
+          <p className="mt-2 text-gray-500">This usually takes less than a second.</p>
+          
+          {/* If it stays here for more than 5 seconds, show a manual button */}
+          <div className="mt-10">
+            <WalletButton className="opacity-0 hover:opacity-100 transition-opacity" label="Click if stuck" />
           </div>
         </div>
       );
