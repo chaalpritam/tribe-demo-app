@@ -13,6 +13,7 @@ import {
   initSocialProfile,
 } from "@/lib/tribe";
 import { SOLANA_RPC_URL, STORAGE_KEYS } from "@/lib/constants";
+import ImportBackup from "./ImportBackup";
 
 // Below this we assume the wallet can't afford a TID register tx
 // (rent + fees ≈ 0.005 SOL). Threshold is generous so we surface
@@ -250,6 +251,10 @@ export default function RegisterIdentity({
           {error}
         </p>
       )}
+
+      <div className="mt-8 border-t border-gray-100 pt-6 text-center">
+        <ImportBackup />
+      </div>
     </div>
   );
 }

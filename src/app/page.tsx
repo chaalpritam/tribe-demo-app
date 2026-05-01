@@ -10,6 +10,7 @@ import ProfileSidebar from "@/components/ProfileSidebar";
 import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
 import RegisterIdentity from "@/components/RegisterIdentity";
+import ImportBackup from "@/components/ImportBackup";
 
 const WalletButton = dynamic(
   async () => {
@@ -127,7 +128,7 @@ export default function Home() {
         <p className="mt-10 text-gray-500">
           Connect your wallet to get started
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col items-center gap-4">
           <WalletButton
             style={{
               backgroundColor: "#18181b",
@@ -137,6 +138,7 @@ export default function Home() {
               padding: "0 1.25rem",
             }}
           />
+          <ImportBackup />
         </div>
       </div>
     );
