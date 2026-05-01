@@ -11,6 +11,7 @@ import {
   type KarmaSummary,
 } from "@/lib/api";
 import { erFollow } from "@/lib/er-client";
+import LogoutButton from "./LogoutButton";
 
 const WalletButton = dynamic(
   async () => {
@@ -54,11 +55,6 @@ export default function ProfileSidebar({
       try {
         const user = await fetchUser(tid);
         setUsername(user?.username ?? null);
-        // The hub returns USER_DATA_ADD-derived fields under
-        // `user.profile` keyed by protocol field name (displayName,
-        // bio, pfpUrl). Older code looked for snake_case fields that
-        // never existed in the response, so display name / avatar /
-        // bio were always null.
         const profile = (user?.profile ?? {}) as Record<string, string>;
         setDisplayName(profile.displayName ?? null);
         setBio(profile.bio ?? null);
@@ -136,6 +132,7 @@ export default function ProfileSidebar({
             justifyContent: "center",
           }}
         />
+        <LogoutButton />
       </div>
 
       {/* Profile card */}

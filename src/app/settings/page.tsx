@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from "@/lib/constants";
 import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 import MobilePairingPanel from "@/components/MobilePairingPanel";
+import LogoutButton from "@/components/LogoutButton";
 import { createBackupPayload, downloadBackupFile, encryptBackup } from "@/lib/backup";
 
 interface ProfileForm {
@@ -314,6 +315,13 @@ export default function SettingsPage() {
               </p>
             )}
           </div>
+        </div>
+
+        <div className="mt-10 border-t border-gray-100 pt-10 pb-10 text-center">
+          <p className="text-sm text-gray-500 mb-4">
+            Want to switch accounts or clear local data?
+          </p>
+          <LogoutButton className="inline-block px-6 py-2 rounded-lg border border-red-200 text-red-600 font-medium hover:bg-red-50 transition-colors" />
         </div>
       </div>
 
