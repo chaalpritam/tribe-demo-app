@@ -1,6 +1,6 @@
 import nacl from "tweetnacl";
 
-const DM_KEY_STORAGE = "tribe_dm_keypair";
+export const DM_KEY_STORAGE = "tribe_dm_keypair";
 
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
