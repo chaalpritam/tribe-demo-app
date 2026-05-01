@@ -32,6 +32,7 @@ export default function Home() {
   const [hasAppKey, setHasAppKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showSetup, setShowSetup] = useState(false);
 
   const checkTid = useCallback(async () => {
     if (!publicKey) return;
@@ -162,7 +163,6 @@ export default function Home() {
     );
   }
 
-  const [showSetup, setShowSetup] = useState(false);
 
   // Main feed view
   return (
