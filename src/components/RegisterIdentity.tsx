@@ -56,6 +56,39 @@ export default function RegisterIdentity({
     });
   }
 
+  // Auto-skip steps if already registered on-chain
+  useEffect(() => {
+    if (!wallet || initialStep !== "register") return;
+
+    async function checkStatus() {
+      setLoading(true);
+      try {
+        const provider = getProvider();
+        const onChainTid = await registerTid(provider, wallet!.publicKey);
+        // registerTid returns existing if it exists without sending tx
+        if (onChainTid.tid) {
+          setTid(onChainTid.tid);
+          localStorage.setItem(STORAGE_KEYS.tid, onChainTid.tid.toString());
+          localStorage.setItem(STORAGE_KEYS.tidWallet, wallet!.publicKey.toBase58());
+          
+          // Check for username
+          const { hasUsername } = await import("@/lib/tribe");
+          const exists = await hasUsername(connection, onChainTid.tid);
+          if (exists) {
+            setStep("appkey");
+          } else {
+            setStep("username");
+          }
+        }
+      } catch (e) {
+        console.error("Auto-check failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkStatus();
+  }, [wallet, initialStep]);
+
   const handleRegisterTid = useCallback(async () => {
     if (!wallet) return;
     setLoading(true);
@@ -145,9 +178,13 @@ export default function RegisterIdentity({
 
   return (
     <div className="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold text-gray-900">Set Up Your Identity</h2>
+      <h2 className="text-xl font-bold text-gray-900">
+        {step === "appkey" ? "Complete Your Setup" : "Set Up Your Identity"}
+      </h2>
       <p className="mt-2 text-sm text-gray-600">
-        Register your Tribe ID to start posting and connecting with others.
+        {step === "appkey" 
+          ? "You're registered! Now generate a signing key to start posting." 
+          : "Register your Tribe ID to start posting and connecting with others."}
       </p>
 
       {/* Progress indicator */}
@@ -165,7 +202,14 @@ export default function RegisterIdentity({
         ))}
       </div>
 
-      {step === "register" && (
+      {loading && step === "register" && (
+        <div className="mt-10 flex flex-col items-center justify-center py-6">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+          <p className="mt-4 text-sm text-gray-500 font-medium">Checking your account status...</p>
+        </div>
+      )}
+
+      {!loading && step === "register" && (
         <div className="mt-6">
           <p className="text-sm text-gray-700">
             Step 1 of 3: Register your Tribe ID (TID) on Solana.

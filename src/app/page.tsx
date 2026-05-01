@@ -153,7 +153,7 @@ export default function Home() {
     );
   }
 
-  // No TID - registration flow (start from beginning)
+  // No TID - registration flow
   if (tid === null) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -162,25 +162,40 @@ export default function Home() {
     );
   }
 
-  // Has TID but no app key - resume registration at app key step
-  if (!hasAppKey) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <RegisterIdentity
-          onRegistered={handleRegistered}
-          initialStep="appkey"
-          existingTid={tid}
-        />
-      </div>
-    );
-  }
+  const [showSetup, setShowSetup] = useState(false);
 
-  // Main feed view: feed centered, profile rail on xl+
+  // Main feed view
   return (
     <div className="mx-auto flex max-w-5xl gap-6 px-4 py-6">
       <div className="min-w-0 flex-1 max-w-2xl">
+        {!hasAppKey && (
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+            <h3 className="text-sm font-bold text-blue-900">Setup Signing Key</h3>
+            <p className="mt-1 text-sm text-blue-700">
+              Your identity is registered, but you need a signing key to post tweets.
+            </p>
+            <button
+              onClick={() => setShowSetup(true)}
+              className="mt-3 text-xs font-bold text-blue-900 underline underline-offset-4"
+            >
+              Configure posting now
+            </button>
+          </div>
+        )}
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
+          {hasAppKey ? (
+            <TweetComposer tid={tid} onTweetPublished={handleTweetPublished} />
+          ) : (
+            <div className="p-10 text-center">
+              <p className="text-gray-500">Connect your signing key to start posting.</p>
+              <button 
+                onClick={() => setShowSetup(true)}
+                className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white"
+              >
+                Setup Signing Key
+              </button>
+            </div>
+          )}
           <Feed myTid={tid} refreshKey={refreshKey} />
         </div>
       </div>
@@ -192,6 +207,27 @@ export default function Home() {
           />
         </div>
       </aside>
+
+      {showSetup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md">
+            <button 
+              onClick={() => setShowSetup(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300"
+            >
+              Close
+            </button>
+            <RegisterIdentity
+              onRegistered={(newTid) => {
+                handleRegistered(newTid);
+                setShowSetup(false);
+              }}
+              initialStep="appkey"
+              existingTid={tid}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
