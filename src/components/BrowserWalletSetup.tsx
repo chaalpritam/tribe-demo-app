@@ -95,7 +95,7 @@ export default function BrowserWalletSetup() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
           <h2 className="text-lg font-bold text-gray-900">Browser wallet</h2>
