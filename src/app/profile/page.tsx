@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing } from "@/lib/api";
@@ -151,7 +152,29 @@ function ProfilePage() {
           </div>
 
           {myTid && !isMe && (
-            <FollowButton myTid={myTid} targetTid={tid} />
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/messages?to=${tid}`}
+                title="Send message"
+                aria-label="Send message"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition-colors hover:border-gray-900 hover:text-gray-900"
+              >
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"
+                  />
+                </svg>
+              </Link>
+              <FollowButton myTid={myTid} targetTid={tid} />
+            </div>
           )}
           {isMe && (
             <span className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500">

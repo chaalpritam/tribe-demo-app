@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
@@ -67,6 +67,7 @@ interface DmMessage {
 
 function MessagesPage() {
   const { connected } = useWallet();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const convId = searchParams.get("conv");
   const newTid = searchParams.get("to");
@@ -180,7 +181,7 @@ function MessagesPage() {
     setError(null);
     try {
       const { encrypted, nonce } = encryptMessage(messageInput.trim(), otherPubkey);
-      await signAndSendDm({
+      const sent = await signAndSendDm({
         senderTid: parseInt(myTid, 10),
         recipientTid: parseInt(recipientTid, 10),
         ciphertext: encrypted,
@@ -189,10 +190,19 @@ function MessagesPage() {
         signingKeySecret: appKey,
       });
       setMessageInput("");
-      // Reload messages
       if (convId) {
+        // Existing conversation — refresh in place.
         const data = await fetchDmMessages(convId, myTid);
         setMessages(data?.messages ?? []);
+      } else if (sent?.conversation_id) {
+        // First send in a fresh `?to=<tid>` flow. The conv-loading
+        // effect is keyed on `?conv=<id>`, so switch the URL — that
+        // both renders the new message and gives the user a path
+        // they can refresh / share.
+        setOtherTid(recipientTid);
+        router.replace(
+          `/messages?conv=${encodeURIComponent(sent.conversation_id)}`
+        );
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to send DM";
