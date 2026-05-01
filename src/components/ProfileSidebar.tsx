@@ -110,7 +110,7 @@ export default function ProfileSidebar({
     <div className="space-y-4">
       {/* Wallet card — sits above profile details */}
       <div className="rounded-xl border border-gray-200 bg-white p-3">
-        <WalletButton className="w-full justify-center" />
+        <WalletButton className="w-full justify-center" label="Login / Connect" />
         <LogoutButton />
       </div>
 

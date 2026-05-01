@@ -118,7 +118,7 @@ export default function Home() {
           Connect your wallet to get started
         </p>
         <div className="mt-4 flex flex-col items-center gap-4">
-        <WalletButton className="h-11 px-8 text-base" />
+        <WalletButton className="h-11 px-8 text-base" label="Join Tribe" />
           <ImportBackup />
         </div>
       </div>

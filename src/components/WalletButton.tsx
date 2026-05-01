@@ -2,19 +2,28 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useCallback, useState } from "react";
-import { BROWSER_WALLET_NAME } from "@/lib/browser-wallet/adapter";
+import { BROWSER_WALLET_NAME, BROWSER_WALLET_SETUP_REQUIRED } from "@/lib/browser-wallet/adapter";
+import { hasStoredKeypair } from "@/lib/browser-wallet/keypair-store";
 
 interface WalletButtonProps {
   className?: string;
+  label?: string;
 }
 
-export default function WalletButton({ className = "" }: WalletButtonProps) {
+export default function WalletButton({ className = "", label }: WalletButtonProps) {
   const { select, connect, disconnect, publicKey, connected, connecting } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleConnect = useCallback(async () => {
     try {
       select(BROWSER_WALLET_NAME);
+      
+      // If no keypair is stored, trigger setup instead of connect to avoid redirects
+      if (!hasStoredKeypair()) {
+        window.dispatchEvent(new Event(BROWSER_WALLET_SETUP_REQUIRED));
+        return;
+      }
+
       await connect();
     } catch (error) {
       console.error("Connection failed", error);
@@ -69,7 +78,7 @@ export default function WalletButton({ className = "" }: WalletButtonProps) {
       disabled={connecting}
       className={`rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-colors disabled:opacity-50 ${className}`}
     >
-      {connecting ? "Connecting..." : "Connect Wallet"}
+      {connecting ? "Connecting..." : (label || "Get Started")}
     </button>
   );
 }
