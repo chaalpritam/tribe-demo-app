@@ -1,22 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import WalletButton from "./WalletButton";
 import Link from "next/link";
-
-const WalletButton = dynamic(
-  async () => {
-    const { WalletMultiButton } = await import(
-      "@solana/wallet-adapter-react-ui"
-    );
-    return { default: WalletMultiButton };
-  },
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-9 w-24 rounded-md bg-gray-200" />
-    ),
-  }
-);
 
 export default function MobileTopBar() {
   return (
@@ -29,15 +14,7 @@ export default function MobileTopBar() {
           Tribe
         </span>
       </Link>
-      <WalletButton
-        style={{
-          backgroundColor: "#18181b",
-          borderRadius: "0.5rem",
-          fontSize: "0.75rem",
-          height: "2.25rem",
-          padding: "0 0.75rem",
-        }}
-      />
+      <WalletButton className="text-xs h-8 px-3" label="Login" />
     </header>
   );
 }
