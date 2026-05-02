@@ -5,7 +5,6 @@ import {
   WalletError,
   WalletName,
   WalletNotConnectedError,
-  WalletNotReadyError,
   WalletReadyState,
   WalletSignMessageError,
   WalletSignTransactionError,
@@ -78,7 +77,12 @@ export class BrowserWalletAdapter extends BaseMessageSignerWalletAdapter {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event(BROWSER_WALLET_SETUP_REQUIRED));
         }
-        throw new WalletNotReadyError("Browser wallet needs setup");
+        // Use WalletConnectionError, NOT WalletNotReadyError. The
+        // wallet-adapter-react default error handler auto-opens
+        // adapter.url in a new tab on WalletNotReadyError, which would
+        // redirect users to tribe.fun instead of letting the in-app
+        // setup modal pop. (See WalletProviderBase.js handleErrorRef.)
+        throw new WalletConnectionError("Browser wallet needs setup");
       }
 
       this._publicKey = keypair.publicKey;
