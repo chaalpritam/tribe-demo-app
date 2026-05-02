@@ -2,11 +2,18 @@
 
 import { useState, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { decryptBackup, applyBackup, type BackupData } from "@/lib/backup";
+import {
+  decryptBackup,
+  applyBackup,
+  isEncryptedBackup,
+  type BackupData,
+} from "@/lib/backup";
 
 export default function ImportBackup() {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [fileText, setFileText] = useState<string>("");
+  const [encrypted, setEncrypted] = useState<boolean>(false);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,33 +22,43 @@ export default function ImportBackup() {
   const { disconnect } = useWallet();
   const [success, setSuccess] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      setError(null);
-      setSuccess(false);
+    if (!selected) return;
+    setError(null);
+    setSuccess(false);
+    setFile(selected);
+    try {
+      const text = await selected.text();
+      setFileText(text);
+      setEncrypted(isEncryptedBackup(text));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not read file");
+      setFileText("");
     }
   };
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!file || !fileText) return;
     setLoading(true);
     setError(null);
 
     try {
-      const text = await file.text();
       let backup: BackupData;
 
-      if (file.name.endsWith(".enc")) {
+      if (encrypted) {
         if (!password) {
           setError("Password is required for encrypted backups");
           setLoading(false);
           return;
         }
-        backup = await decryptBackup(text, password);
+        backup = await decryptBackup(fileText, password);
       } else {
-        backup = JSON.parse(text);
+        try {
+          backup = JSON.parse(fileText);
+        } catch {
+          throw new Error("Backup file is not valid JSON or encrypted data.");
+        }
       }
 
       // Important: Disconnect current wallet to prevent the app from 
@@ -107,7 +124,7 @@ export default function ImportBackup() {
             />
           </div>
 
-          {file?.name.endsWith(".enc") && (
+          {file && encrypted && (
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Backup Password
@@ -119,7 +136,17 @@ export default function ImportBackup() {
                 placeholder="Enter password"
                 className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 focus:border-gray-900 focus:outline-none"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                This file is encrypted — enter the password used when it was created.
+              </p>
             </div>
+          )}
+
+          {file && !encrypted && (
+            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg">
+              ⚠️ This backup is not encrypted. The seed phrase is in
+              cleartext. Only proceed if you're sure of the file's source.
+            </p>
           )}
 
           {error && (

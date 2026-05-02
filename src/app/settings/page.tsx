@@ -7,7 +7,12 @@ import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 import MobilePairingPanel from "@/components/MobilePairingPanel";
 import LogoutButton from "@/components/LogoutButton";
-import { createBackupPayload, downloadBackupFile, encryptBackup } from "@/lib/backup";
+import {
+  createBackupPayload,
+  encryptBackup,
+  markBackupComplete,
+  getLastBackupAt,
+} from "@/lib/backup";
 import ConnectionRequired from "@/components/ConnectionRequired";
 
 interface ProfileForm {
@@ -47,11 +52,14 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
   
   const [backupPassword, setBackupPassword] = useState("");
+  const [backupPasswordConfirm, setBackupPasswordConfirm] = useState("");
   const [isEncrypting, setIsEncrypting] = useState(false);
+  const [lastBackupAt, setLastBackupAt] = useState<number | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
     if (stored) setMyTid(stored);
+    setLastBackupAt(getLastBackupAt());
   }, []);
 
   useEffect(() => {
@@ -145,35 +153,42 @@ export default function SettingsPage() {
   }, [myTid, form, original]);
 
   const handleBackup = useCallback(async () => {
+    if (backupPassword.length < 8) {
+      setMessage("Backup password must be at least 8 characters.");
+      return;
+    }
+    if (backupPassword !== backupPasswordConfirm) {
+      setMessage("Passwords don't match.");
+      return;
+    }
     try {
+      setIsEncrypting(true);
       const payload = createBackupPayload();
       const filename = form.displayName || myTid || "tribe-account";
-      
-      if (backupPassword) {
-        setIsEncrypting(true);
-        const encrypted = await encryptBackup(payload, backupPassword);
-        const blob = new Blob([encrypted], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${filename}.tribe.enc`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        setMessage("Encrypted backup downloaded");
-      } else {
-        downloadBackupFile(payload, filename);
-        setMessage("Backup downloaded");
-      }
+      const encrypted = await encryptBackup(payload, backupPassword);
+      const blob = new Blob([encrypted], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${filename}.tribe.enc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      markBackupComplete();
+      setLastBackupAt(Date.now());
+      setBackupPassword("");
+      setBackupPasswordConfirm("");
+      setMessage("Encrypted backup downloaded");
     } catch (err) {
       setMessage("Backup failed: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsEncrypting(false);
     }
-  }, [form.displayName, myTid, backupPassword]);
+  }, [form.displayName, myTid, backupPassword, backupPasswordConfirm]);
 
   return (
+    <ConnectionRequired>
     <div className="mx-auto max-w-lg px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
 
@@ -274,31 +289,48 @@ export default function SettingsPage() {
         <div className="mt-10 border-t border-gray-100 pt-10">
           <h2 className="text-xl font-bold text-gray-900">Backup Account</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Export your account keys to a file. You can use this to restore your account on another device.
+            Export your wallet, identity, and signing keys to an encrypted
+            file. Keep it somewhere safe — without it, you cannot recover
+            this account if your browser data is wiped.
           </p>
-          
+          {lastBackupAt && (
+            <p className="mt-2 text-xs text-gray-500">
+              Last backup: {new Date(lastBackupAt).toLocaleString()}
+            </p>
+          )}
+
           <div className="mt-6 space-y-4">
             <Field
-              label="Backup Password (Optional)"
+              label="Backup Password"
               value={backupPassword}
               onChange={setBackupPassword}
-              placeholder="Leave empty for unencrypted backup"
+              placeholder="At least 8 characters"
               type="password"
             />
-            
+            <Field
+              label="Confirm Password"
+              value={backupPasswordConfirm}
+              onChange={setBackupPasswordConfirm}
+              placeholder="Re-enter password"
+              type="password"
+            />
+
             <button
               onClick={handleBackup}
-              disabled={isEncrypting}
+              disabled={
+                isEncrypting ||
+                backupPassword.length < 8 ||
+                backupPassword !== backupPasswordConfirm
+              }
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-semibold text-gray-900 transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
-              {isEncrypting ? "Encrypting..." : "Download Backup (.tribe)"}
+              {isEncrypting ? "Encrypting..." : "Download Encrypted Backup"}
             </button>
-            
-            {backupPassword && (
-              <p className="text-xs text-amber-600">
-                ⚠️ Make sure to remember your password. You won't be able to restore the backup without it.
-              </p>
-            )}
+
+            <p className="text-xs text-amber-600">
+              ⚠️ Without this password the backup cannot be decrypted.
+              There is no recovery — write it down.
+            </p>
           </div>
         </div>
 
