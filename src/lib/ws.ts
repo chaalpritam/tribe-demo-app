@@ -13,13 +13,17 @@ function getWsUrl(): string {
 }
 
 function connect() {
-  if (socket?.readyState === WebSocket.OPEN) return;
+  if (
+    socket?.readyState === WebSocket.OPEN ||
+    socket?.readyState === WebSocket.CONNECTING
+  ) {
+    return;
+  }
 
   try {
     socket = new WebSocket(getWsUrl());
 
     socket.onopen = () => {
-      // Re-subscribe to TID if we had one
       if (subscribedTid && socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ subscribe: subscribedTid }));
       }
@@ -47,9 +51,9 @@ function connect() {
       }
     };
 
-    socket.onerror = () => {
-      socket?.close();
-    };
+    // Intentionally no onerror: onclose fires on its own and schedules
+    // reconnect. Calling close() here while still CONNECTING produces a
+    // noisy "WebSocket is closed before the connection is established".
   } catch {
     // WebSocket not available
   }
@@ -66,8 +70,13 @@ export function onFeedUpdate(handler: MessageHandler): () => void {
   return () => {
     handlers = handlers.filter((h) => h !== handler);
     if (handlers.length === 0 && socket) {
-      socket.close();
-      socket = null;
+      // Only close when fully open. Closing a CONNECTING socket logs a
+      // browser warning; instead let it finish — a remount (e.g. React
+      // Strict Mode) will reuse it via the CONNECTING guard in connect().
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+        socket = null;
+      }
     }
   };
 }
