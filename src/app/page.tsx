@@ -5,6 +5,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { getTidByCustody } from "@/lib/tribe";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { hasStoredKeypair } from "@/lib/browser-wallet/keypair-store";
+import { BROWSER_WALLET_NAME } from "@/lib/browser-wallet/adapter";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
@@ -14,13 +16,15 @@ import ImportBackup from "@/components/ImportBackup";
 import WalletButton from "@/components/WalletButton";
 
 export default function Home() {
-  const { publicKey, connected, connecting } = useWallet();
+  const { publicKey, connected, connecting, select, wallet } = useWallet();
   const { connection } = useConnection();
   const [tid, setTid] = useState<number | null>(null);
   const [hasAppKey, setHasAppKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showSetup, setShowSetup] = useState(false);
+  const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   const checkTid = useCallback(async () => {
     if (!publicKey) return;
@@ -87,13 +91,50 @@ export default function Home() {
     setHasAppKey(true);
   }, []);
 
+  // hasExistingAccount means we have BOTH a TID and a wallet keypair to
+  // unlock it. A bare TID without the keypair is unrecoverable from this
+  // browser, so we let the user fall through to the welcome screen and
+  // re-import a backup instead of hanging on the spinner.
+  const hasExistingAccount =
+    typeof window !== "undefined" &&
+    !!localStorage.getItem(STORAGE_KEYS.tid) &&
+    hasStoredKeypair();
+
+  // Proactively select the Browser Wallet adapter when we have an
+  // existing account, so autoConnect actually has something to revive.
+  useEffect(() => {
+    if (
+      !connected &&
+      !connecting &&
+      !autoConnectAttempted &&
+      !connectionError &&
+      hasExistingAccount &&
+      (!wallet || wallet.adapter.name !== BROWSER_WALLET_NAME)
+    ) {
+      setAutoConnectAttempted(true);
+      select(BROWSER_WALLET_NAME);
+    }
+  }, [
+    connected,
+    connecting,
+    wallet,
+    autoConnectAttempted,
+    connectionError,
+    hasExistingAccount,
+    select,
+  ]);
+
+  // After 3s of no progress, drop the spinner and show recovery options.
+  useEffect(() => {
+    if (connected || connectionError) return;
+    if (!hasExistingAccount && !connecting) return;
+    const t = setTimeout(() => setConnectionError(true), 3000);
+    return () => clearTimeout(t);
+  }, [connected, connecting, hasExistingAccount, connectionError]);
+
   // Not connected - show hero or loading
   if (!connected) {
-    const hasExistingAccount = typeof window !== "undefined" && !!localStorage.getItem(STORAGE_KEYS.tid);
-    
-    // If we have an account, we should be connecting. If not, the WalletButton 
-    // inside our Providers (via autoConnect) or a manual trigger should handle it.
-    if (hasExistingAccount || connecting) {
+    if ((hasExistingAccount || connecting) && !connectionError) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-900 border-t-transparent" />
@@ -101,11 +142,13 @@ export default function Home() {
             {connecting ? "Connecting..." : "Waking up your account..."}
           </h2>
           <p className="mt-2 text-gray-500">This usually takes less than a second.</p>
-          
-          {/* If it stays here for more than 5 seconds, show a manual button */}
-          <div className="mt-10">
-            <WalletButton className="opacity-0 hover:opacity-100 transition-opacity" label="Click if stuck" />
-          </div>
+
+          <button
+            onClick={() => setConnectionError(true)}
+            className="mt-10 text-sm text-gray-500 underline underline-offset-4 hover:text-gray-900"
+          >
+            Taking too long? Click here.
+          </button>
         </div>
       );
     }
@@ -144,12 +187,32 @@ export default function Home() {
           </div>
         </div>
 
+        {connectionError && (
+          <div className="mt-8 max-w-md rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            We couldn&apos;t restore your previous session — the wallet
+            keypair is missing or the auto-connect failed. Import an
+            encrypted backup to recover, or clear local data to start
+            fresh.
+          </div>
+        )}
+
         <p className="mt-10 text-gray-500">
           Connect your wallet to get started
         </p>
         <div className="mt-4 flex flex-col items-center gap-4">
-        <WalletButton className="h-11 px-8 text-base" label="Join Tribe" />
+          <WalletButton className="h-11 px-8 text-base" label="Join Tribe" />
           <ImportBackup />
+          {connectionError && (
+            <button
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="text-sm text-gray-400 underline underline-offset-4 hover:text-gray-600"
+            >
+              Clear local data and start over
+            </button>
+          )}
         </div>
       </div>
     );
