@@ -12,6 +12,7 @@ import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
 import RegisterIdentity from "@/components/RegisterIdentity";
 import ImportBackup from "@/components/ImportBackup";
+import BackupReminder from "@/components/BackupReminder";
 
 import WalletButton from "@/components/WalletButton";
 
@@ -241,6 +242,7 @@ export default function Home() {
   return (
     <div className="mx-auto flex max-w-5xl gap-6 px-4 py-6">
       <div className="min-w-0 flex-1 max-w-2xl">
+        <BackupReminder />
         {!hasAppKey && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
             <h3 className="text-sm font-bold text-blue-900">Setup Signing Key</h3>
