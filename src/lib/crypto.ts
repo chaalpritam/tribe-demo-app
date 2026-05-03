@@ -15,11 +15,14 @@ function fromBase64(b64: string): Uint8Array {
 }
 
 /**
- * Get or create the user's x25519 keypair for DMs.
- * Stored in sessionStorage.
+ * Get or create the user's x25519 keypair for DMs. Persisted in
+ * localStorage so the secret survives tab close — otherwise every
+ * new tab would generate a fresh keypair, re-register it as the
+ * user's DM pubkey, and leave every prior DM mathematically
+ * unopenable (the secret that sealed them is gone).
  */
 export function getDmKeypair(): nacl.BoxKeyPair {
-  const stored = sessionStorage.getItem(DM_KEY_STORAGE);
+  const stored = localStorage.getItem(DM_KEY_STORAGE);
   if (stored) {
     const parsed = JSON.parse(stored);
     return {
@@ -29,7 +32,7 @@ export function getDmKeypair(): nacl.BoxKeyPair {
   }
 
   const keypair = nacl.box.keyPair();
-  sessionStorage.setItem(
+  localStorage.setItem(
     DM_KEY_STORAGE,
     JSON.stringify({
       publicKey: toBase64(keypair.publicKey),

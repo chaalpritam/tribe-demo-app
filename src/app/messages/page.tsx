@@ -63,6 +63,7 @@ interface DmMessage {
   sender_username: string | null;
   encrypted_text: string;
   nonce: string;
+  sender_x25519: string;
   created_at: string;
 }
 
@@ -93,10 +94,10 @@ function MessagesPage() {
     setMyTid(stored);
     const appKey = loadAppKey();
     if (!appKey) return;
-    // Register the user's x25519 DM pubkey on every load so a fresh
-    // sessionStorage keypair (rotated automatically when the tab dies)
-    // gets advertised to peers. Failures are non-fatal; the user can
-    // still browse conversations.
+    // Re-advertise the persisted DM pubkey on every load. Idempotent
+    // when the keypair hasn't changed; recovers the registration if
+    // the user wiped local data and a fresh keypair was generated.
+    // Failures are non-fatal; the user can still browse conversations.
     const pubkey = getDmPublicKey();
     signAndRegisterDmKey(parseInt(stored, 10), pubkey, appKey).catch((err) => {
       console.warn("DM key register failed:", err);
@@ -259,9 +260,17 @@ function MessagesPage() {
                   <div className="space-y-3">
                     {messages.map((msg, i) => {
                       const isMe = msg.sender_tid === myTid;
+                      // For their messages, the per-message sender_x25519 is
+                      // the only key that's guaranteed to match the seal —
+                      // their currently-registered DM pubkey may have rotated.
+                      // For our own outgoing messages we don't have the
+                      // recipient's pubkey at time of send, so fall back to
+                      // their current key (best-effort; breaks if they
+                      // rotated since we sent).
+                      const peerKey = isMe ? otherPubkey : msg.sender_x25519;
                       let text = "[encrypted]";
-                      if (otherPubkey) {
-                        const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, otherPubkey);
+                      if (peerKey) {
+                        const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, peerKey);
                         if (decrypted) text = decrypted;
                       }
                       return (

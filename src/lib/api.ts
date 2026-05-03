@@ -535,6 +535,10 @@ interface DmMessageRow {
   sender_username: string | null;
   encrypted_text: string;
   nonce: string;
+  /** Sender's x25519 pubkey at time of send. Stored per-message by the
+   *  hub so the recipient can decrypt regardless of any later rotation
+   *  of the sender's currently-registered DM key. */
+  sender_x25519: string;
   created_at: string;
 }
 
@@ -559,6 +563,7 @@ export async function fetchDmMessages(
       sender_tid: number | string;
       ciphertext: string;
       nonce: string;
+      sender_x25519: string;
       timestamp: string;
     }>;
   };
@@ -568,6 +573,7 @@ export async function fetchDmMessages(
     sender_username: null,
     encrypted_text: m.ciphertext,
     nonce: m.nonce,
+    sender_x25519: m.sender_x25519,
     created_at: m.timestamp,
   }));
   return { messages };
