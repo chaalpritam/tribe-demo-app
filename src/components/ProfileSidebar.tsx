@@ -190,19 +190,11 @@ export default function ProfileSidebar({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-xs font-bold text-white shadow-inner ring-2 ring-white transition-transform group-hover:scale-105">
-                      {u.pfp_url ? (
-                        <img
-                          src={resolveMediaUrl(u.pfp_url) ?? ""}
-                          alt={u.username ?? u.tid}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
-                          {(u.username || u.tid)[0].toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <SuggestedUserAvatar
+                      pfpUrl={u.pfp_url ?? u.profile?.pfpUrl ?? null}
+                      label={u.username ?? u.tid}
+                      initial={(u.display_name || u.username || u.tid)[0].toUpperCase()}
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-gray-900">
                         {u.username ? `${u.username}.tribe` : `TID #${u.tid}`}
@@ -282,6 +274,42 @@ export default function ProfileSidebar({
             )}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Avatar tile for suggested-user rows. Renders the resolved pfp
+ * when available, falls back to the initial letter on either a
+ * missing URL or an image-load error (so a 404'd media hash doesn't
+ * leave a broken-image icon sitting in the sidebar).
+ */
+function SuggestedUserAvatar({
+  pfpUrl,
+  label,
+  initial,
+}: {
+  pfpUrl: string | null;
+  label: string;
+  initial: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const resolved = pfpUrl ? resolveMediaUrl(pfpUrl) : null;
+  const showImage = resolved && !errored;
+  return (
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-xs font-bold text-white shadow-inner ring-2 ring-white transition-transform group-hover:scale-105">
+      {showImage ? (
+        <img
+          src={resolved}
+          alt={label}
+          className="h-full w-full object-cover"
+          onError={() => setErrored(true)}
+        />
+      ) : (
+        <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+          {initial}
+        </span>
       )}
     </div>
   );
