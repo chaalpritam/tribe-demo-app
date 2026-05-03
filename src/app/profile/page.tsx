@@ -211,7 +211,31 @@ function ProfilePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z" />
                   </svg>
                 </Link>
-                <FollowButton myTid={myTid} targetTid={tid} />
+                <FollowButton
+                  myTid={myTid}
+                  targetTid={tid}
+                  onToggle={(nowFollowing) => {
+                    // Optimistically bump this profile's followers
+                    // count — the hub's social_graph row only lands
+                    // after L1 settlement (~10s + indexer lag), so
+                    // without this the displayed number doesn't move
+                    // on the user's screen until the next reload.
+                    setUser((u) =>
+                      u
+                        ? {
+                            ...u,
+                            followers_count: String(
+                              Math.max(
+                                0,
+                                Number(u.followers_count ?? 0) +
+                                  (nowFollowing ? 1 : -1),
+                              ),
+                            ),
+                          }
+                        : u,
+                    );
+                  }}
+                />
               </>
             )}
             {isMe && (

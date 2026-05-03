@@ -212,7 +212,35 @@ export default function ProfileSidebar({
                       </p>
                     </div>
                   </div>
-                  <FollowButton targetTid={Number(u.tid)} myTid={Number(tid)} />
+                  <FollowButton
+                    targetTid={Number(u.tid)}
+                    myTid={Number(tid)}
+                    onToggle={(nowFollowing) => {
+                      // The hub's social_graph row only shows up
+                      // after L1 settlement, so without this the
+                      // count under "Following" on the sidebar
+                      // doesn't move until the next page reload.
+                      setFollowingCount((c) =>
+                        Math.max(0, c + (nowFollowing ? 1 : -1)),
+                      );
+                      // Update the followingList too so the user
+                      // disappears from suggestions on follow and
+                      // reappears on unfollow.
+                      setFollowingList((list) =>
+                        nowFollowing
+                          ? [
+                              ...list,
+                              {
+                                following_tid: String(u.tid),
+                                username: u.username ?? null,
+                              },
+                            ]
+                          : list.filter(
+                              (f) => f.following_tid !== String(u.tid),
+                            ),
+                      );
+                    }}
+                  />
                 </div>
                 {u.bio && (
                   <p className="line-clamp-2 text-xs leading-relaxed text-gray-600">
