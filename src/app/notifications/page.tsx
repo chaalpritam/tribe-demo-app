@@ -17,7 +17,9 @@ type NotificationType =
   | "event_rsvp"
   | "task_claim"
   | "task_complete"
-  | "crowdfund_pledge";
+  | "crowdfund_pledge"
+  | "dm"
+  | "dm_group";
 
 interface Notification {
   type: NotificationType;
@@ -40,6 +42,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   task_claim: "claimed your task",
   task_complete: "completed your task",
   crowdfund_pledge: "pledged to your crowdfund",
+  dm: "sent you a message",
+  dm_group: "messaged your group",
 };
 
 function NotifIcon({ type }: { type: NotificationType }) {
@@ -113,12 +117,42 @@ function NotifIcon({ type }: { type: NotificationType }) {
           <path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" strokeLinecap="round" />
         </svg>
       );
+    case "dm":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <path d="M4 6h16v10H8l-4 4V6z" strokeLinejoin="round" />
+        </svg>
+      );
+    case "dm_group":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className={common}>
+          <path d="M3 7h13v8H8l-3 3V7z" strokeLinejoin="round" />
+          <path d="M9 4h12v8" strokeLinejoin="round" />
+        </svg>
+      );
   }
 }
 
 // Tweet-anchored types link to /tweet?hash=…; everything else stays on the
 // notifications screen (no dedicated detail routes for poll/event/task/etc).
 const TWEET_HASH_TYPES: NotificationType[] = ["reaction", "reply", "tip", "mention"];
+
+// Resolve the per-row link target. Tweet-anchored notifications open
+// the tweet detail; DMs jump straight into the conversation; group
+// DMs into the group view. Everything else has no detail route.
+function notificationLink(n: { type: NotificationType; target_hash: string | null }): string | null {
+  if (!n.target_hash) return null;
+  if (TWEET_HASH_TYPES.includes(n.type)) {
+    return `/tweet?hash=${encodeURIComponent(n.target_hash)}`;
+  }
+  if (n.type === "dm") {
+    return `/messages?conv=${encodeURIComponent(n.target_hash)}`;
+  }
+  if (n.type === "dm_group") {
+    return `/messages?group=${encodeURIComponent(n.target_hash)}`;
+  }
+  return null;
+}
 
 const LAST_SEEN_KEY_PREFIX = "tribe.notifications.lastSeen.";
 
@@ -202,10 +236,13 @@ export default function NotificationsPage() {
             const unread = ts > lastSeen;
             const fromName = n.actor_username ? `${n.actor_username}.tribe` : `TID #${n.actor_tid}`;
             const initial = (n.actor_username || n.actor_tid)[0].toUpperCase();
-            const tweetLink =
-              TWEET_HASH_TYPES.includes(n.type) && n.target_hash
-                ? `/tweet?hash=${encodeURIComponent(n.target_hash)}`
-                : null;
+            const detailLink = notificationLink(n);
+            const detailLabel =
+              n.type === "dm"
+                ? "Open conversation"
+                : n.type === "dm_group"
+                  ? "Open group"
+                  : "View tweet";
 
             return (
               <div
@@ -246,12 +283,12 @@ export default function NotificationsPage() {
                       {n.preview}
                     </p>
                   )}
-                  {tweetLink && (
+                  {detailLink && (
                     <Link
-                      href={tweetLink}
+                      href={detailLink}
                       className="mt-1 block text-xs text-blue-600 hover:underline"
                     >
-                      View tweet
+                      {detailLabel}
                     </Link>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
