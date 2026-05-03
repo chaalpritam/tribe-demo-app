@@ -16,17 +16,19 @@ export default function FollowButton({
   onToggle,
 }: FollowButtonProps) {
   const { publicKey, signMessage } = useWallet();
+  // `following` covers both `pending_follow` (recorded in the ER,
+  // not yet settled to L1) and `settled` (on-chain). The settler
+  // batches every 10s, so the distinction is an implementation
+  // detail the user shouldn't have to think about — both states
+  // render as "Following".
   const [following, setFollowing] = useState(false);
-  const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
 
-  // Check current follow status on mount
   useEffect(() => {
     if (myTid === targetTid) return;
     erGetLink(myTid, targetTid).then((data) => {
       setFollowing(data.exists);
-      setPending(data.status === "pending_follow");
       setChecked(true);
     }).catch(() => setChecked(true));
   }, [myTid, targetTid]);
@@ -38,12 +40,10 @@ export default function FollowButton({
       if (following) {
         await erUnfollow(myTid, targetTid, publicKey.toBase58(), signMessage);
         setFollowing(false);
-        setPending(false);
         onToggle?.(false);
       } else {
         await erFollow(myTid, targetTid, publicKey.toBase58(), signMessage);
         setFollowing(true);
-        setPending(true);
         onToggle?.(true);
       }
     } catch (err) {
@@ -69,8 +69,8 @@ export default function FollowButton({
         <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
       ) : following ? (
         <>
-          {pending ? "Pending" : "Following"}
-          <span className="hidden group-hover:inline">{pending ? "" : " · Unfollow"}</span>
+          Following
+          <span className="hidden group-hover:inline"> · Unfollow</span>
         </>
       ) : (
         "Follow"
