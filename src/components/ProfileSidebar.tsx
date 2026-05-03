@@ -13,6 +13,7 @@ import {
 import { erFollow } from "@/lib/er-client";
 import LogoutButton from "./LogoutButton";
 import FollowButton from "./FollowButton";
+import ActivityCard from "./ActivityCard";
 
 import WalletButton from "./WalletButton";
 
@@ -169,6 +170,9 @@ export default function ProfileSidebar({
           </details>
         )}
       </div>
+
+      {/* Activity (on-chain + signed envelopes) */}
+      <ActivityCard tid={tid} />
 
       {/* Who to follow */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">

@@ -379,6 +379,48 @@ export async function fetchUserLikes(tid: string) {
   return res.json() as Promise<{ tweets: unknown[] }>;
 }
 
+export type ActivityType =
+  | "tid_registered"
+  | "tweet"
+  | "tweet_reply"
+  | "reaction_like"
+  | "reaction_recast"
+  | "bookmark"
+  | "dm_sent"
+  | "tip_sent"
+  | "tip_received"
+  | "follow_pending"
+  | "follow_settled"
+  | "follow_failed"
+  | "unfollow_pending"
+  | "unfollow_settled"
+  | "unfollow_failed";
+
+export interface ActivityRow {
+  type: ActivityType;
+  timestamp: string;
+  tx_signature: string | null;
+  preview: string | null;
+  target_hash: string | null;
+  peer_tid: string | null;
+}
+
+/**
+ * Per-account activity feed: every signed envelope the account has
+ * produced (tweets, reactions, bookmarks, DMs, tips) plus every
+ * follow / unfollow op via the ER. Powers the sidebar Activity card
+ * — the user-facing transparency log of "what my account did".
+ */
+export async function fetchUserActivity(
+  tid: string,
+  limit = 50,
+): Promise<ActivityRow[]> {
+  const res = await hubFetch(`/v1/users/${tid}/activity?limit=${limit}`);
+  if (!res.ok) return [];
+  const body = (await res.json()) as { activity?: ActivityRow[] };
+  return Array.isArray(body.activity) ? body.activity : [];
+}
+
 // ── Karma ───────────────────────────────────────────────────────────
 
 export interface KarmaSummary {
