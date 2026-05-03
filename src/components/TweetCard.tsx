@@ -25,6 +25,11 @@ interface TweetCardProps {
   replyCount?: number;
   channelId?: string;
   embeds?: string[];
+  /** When set, render a "@user retweeted" header above the card body
+   *  so the original tweet still attributes correctly to its author
+   *  while making clear this row appeared because of a retweet. */
+  retweetedByTid?: number;
+  retweetedByUsername?: string;
   /**
    * Called after a successful TWEET_REMOVE so the parent can drop the
    * tweet from its local list. The hub-side filter hides it on
@@ -52,6 +57,8 @@ export default function TweetCard({
   replyCount,
   channelId,
   embeds,
+  retweetedByTid,
+  retweetedByUsername,
   onDeleted,
 }: TweetCardProps) {
   const date = new Date(timestamp * 1000);
@@ -90,8 +97,31 @@ export default function TweetCard({
 
   const resolvedPfp = pfpUrl ? resolveMediaUrl(pfpUrl) : null;
 
+  const retweeterLabel = retweetedByUsername
+    ? `${retweetedByUsername}.tribe`
+    : retweetedByTid !== undefined
+      ? `TID #${retweetedByTid}`
+      : null;
+
   return (
     <div className="border-b border-gray-200 px-4 py-4 transition-colors hover:bg-gray-50">
+      {retweeterLabel && (
+        <div className="mb-2 flex items-center gap-1.5 pl-12 text-xs font-medium text-gray-500">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" />
+          </svg>
+          {retweetedByTid !== undefined ? (
+            <Link
+              href={`/profile?tid=${retweetedByTid}`}
+              className="hover:underline"
+            >
+              {retweeterLabel} retweeted
+            </Link>
+          ) : (
+            <span>{retweeterLabel} retweeted</span>
+          )}
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <Link
           href={`/profile?tid=${tid}`}

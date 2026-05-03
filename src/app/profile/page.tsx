@@ -30,9 +30,16 @@ interface Tweet {
   text?: string;
   timestamp?: string | number;
   username?: string | null;
+  display_name?: string | null;
   pfp_url?: string | null;
   channel_id?: string;
   embeds?: string[];
+  /** Set by /v1/feed/:tid when the row represents a retweet by the
+   *  profile owner — the tweet body is the original, and these
+   *  fields tell the card to render a "@user retweeted" header. */
+  retweeted_by_tid?: string | number | null;
+  retweeted_by_username?: string | null;
+  retweeted_at?: string | null;
 }
 
 interface FollowEntry {
@@ -276,18 +283,30 @@ function ProfilePage() {
                       )
                     : tweet.timestamp
                   : 0;
+                // The same original tweet can appear twice in a feed
+                // (e.g. user posted AND retweeted the same hash) — key
+                // on the (action, hash) pair so React doesn't collide.
+                const isRetweet = tweet.retweeted_by_tid != null;
+                const rowKey = `${isRetweet ? "rt" : "tw"}:${tweet.hash ?? i}`;
                 return (
                   <TweetCard
-                    key={tweet.hash ?? i}
+                    key={rowKey}
                     text={tweet.text ?? ""}
                     tid={Number(tweet.tid ?? 0)}
                     timestamp={tweetTimestamp}
                     hash={tweet.hash}
                     username={tweet.username ?? undefined}
+                    displayName={tweet.display_name ?? undefined}
                     pfpUrl={tweet.pfp_url ?? user?.pfp_url ?? undefined}
                     myTid={myTid ?? undefined}
                     channelId={tweet.channel_id}
                     embeds={tweet.embeds}
+                    retweetedByTid={
+                      tweet.retweeted_by_tid != null
+                        ? Number(tweet.retweeted_by_tid)
+                        : undefined
+                    }
+                    retweetedByUsername={tweet.retweeted_by_username ?? undefined}
                   />
                 );
               })
