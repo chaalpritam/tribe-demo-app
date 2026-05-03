@@ -202,6 +202,26 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/profile",
+    label: "Profile",
+    match: (p) => p.startsWith("/profile"),
+    icon: (active) => (
+      <svg
+        viewBox="0 0 24 24"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={active ? 0 : 1.8}
+        className="h-6 w-6"
+      >
+        <path
+          d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="7" r="4" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/wallet",
     label: "Wallet",
     icon: (active) => (
@@ -263,9 +283,21 @@ function useNotificationCount() {
 export default function LeftSidebar() {
   const pathname = usePathname() ?? "/";
   const notifCount = useNotificationCount();
+  const [myTid, setMyTid] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMyTid(localStorage.getItem(STORAGE_KEYS.tid));
+  }, []);
 
   const isActive = (item: NavItem) =>
     item.match ? item.match(pathname) : pathname === item.href;
+
+  const getHref = (item: NavItem) => {
+    if (item.href === "/profile" && myTid) {
+      return `/profile?tid=${myTid}`;
+    }
+    return item.href;
+  };
 
   return (
     <>
@@ -292,7 +324,7 @@ export default function LeftSidebar() {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={getHref(item)}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-[15px] transition-colors ${
                   active
                     ? "font-semibold text-gray-900"
@@ -322,14 +354,14 @@ export default function LeftSidebar() {
           NAV_ITEMS[1], // Search
           NAV_ITEMS[3], // Notifications
           NAV_ITEMS[4], // Messages
-          NAV_ITEMS[11], // Wallet
+          NAV_ITEMS[11], // Profile
         ].map((item) => {
           const active = isActive(item);
           const badge = item.badgeKey === "notifications" ? notifCount : 0;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={getHref(item)}
               className="relative flex flex-col items-center gap-0.5 px-3 py-1 text-gray-700"
               aria-label={item.label}
             >
