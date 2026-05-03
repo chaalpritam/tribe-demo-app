@@ -200,9 +200,6 @@ export default function NotificationsPage() {
           {notifications.map((n, idx) => {
             const ts = new Date(n.created_at).getTime();
             const unread = ts > lastSeen;
-          {notifications.map((n, idx) => {
-            const ts = new Date(n.created_at).getTime();
-            const unread = ts > lastSeen;
             const fromName = n.actor_username ? `${n.actor_username}.tribe` : `TID #${n.actor_tid}`;
             const initial = (n.actor_username || n.actor_tid)[0].toUpperCase();
             const tweetLink =

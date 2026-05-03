@@ -374,6 +374,7 @@ export interface DmGroupRow {
 export interface DmGroupMessage {
   hash: string;
   sender_tid: string;
+  sender_username?: string | null;
   sender_x25519: string;
   timestamp: string;
   ciphertext: string;
