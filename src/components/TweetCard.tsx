@@ -23,6 +23,7 @@ interface TweetCardProps {
   pfpUrl?: string;
   myTid?: number;
   replyCount?: number;
+  channelId?: string;
   embeds?: string[];
   /**
    * Called after a successful TWEET_REMOVE so the parent can drop the
@@ -49,6 +50,7 @@ export default function TweetCard({
   pfpUrl,
   myTid,
   replyCount,
+  channelId,
   embeds,
   onDeleted,
 }: TweetCardProps) {
@@ -109,23 +111,34 @@ export default function TweetCard({
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Link
               href={`/profile?tid=${tid}`}
               className="font-semibold text-gray-900 hover:underline"
             >
               {nameLabel}
             </Link>
-            <span className="text-sm text-gray-500">#{tid}</span>
+            <span className="text-xs text-gray-500 font-mono">#{tid}</span>
+            {channelId && channelId !== "general" && (
+              <>
+                <span className="text-gray-400">·</span>
+                <Link
+                  href={`/channels/${encodeURIComponent(channelId)}`}
+                  className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900"
+                >
+                  {channelId}
+                </Link>
+              </>
+            )}
             {displayNameProp?.trim() && (
               <>
-                <span className="text-sm text-gray-500">&middot;</span>
+                <span className="text-gray-400">·</span>
                 <span className="text-sm text-gray-500">{displayNameProp}</span>
               </>
             )}
-            <span className="text-sm text-gray-500">&middot;</span>
+            <span className="text-gray-400">·</span>
             <span
-              className="text-sm text-gray-500"
+              className="text-xs text-gray-500"
               title={date.toLocaleString()}
             >
               {timeAgo}

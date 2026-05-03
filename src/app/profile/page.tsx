@@ -31,6 +31,8 @@ interface Tweet {
   timestamp?: string | number;
   username?: string | null;
   pfp_url?: string | null;
+  channel_id?: string;
+  embeds?: string[];
 }
 
 interface FollowEntry {
@@ -284,6 +286,8 @@ function ProfilePage() {
                     username={tweet.username ?? undefined}
                     pfpUrl={tweet.pfp_url ?? user?.pfp_url ?? undefined}
                     myTid={myTid ?? undefined}
+                    channelId={tweet.channel_id}
+                    embeds={tweet.embeds}
                   />
                 );
               })
