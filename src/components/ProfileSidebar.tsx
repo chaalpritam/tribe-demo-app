@@ -44,10 +44,12 @@ export default function ProfileSidebar({
       try {
         const user = await fetchUser(tid);
         setUsername(user?.username ?? null);
-        const profile = (user?.profile ?? {}) as Record<string, string>;
+        const profile = (user?.profile ?? {}) as Record<string, any>;
         setDisplayName(profile.displayName ?? null);
         setBio(profile.bio ?? null);
-        setAvatarUrl(profile.pfpUrl ?? null);
+        // Prefer top-level pfp_url, fallback to profile fields (both camelCase and snake_case)
+        setAvatarUrl(user?.pfp_url ?? profile.pfpUrl ?? profile.pfp_url ?? null);
+        setImgError(false); // Reset error state on new profile
         setFollowersCount(
           Number(user?.followers_count ?? user?.follower_count ?? 0)
         );
@@ -101,10 +103,9 @@ export default function ProfileSidebar({
         <LogoutButton />
       </div>
 
-      {/* Profile card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-lg font-bold text-white">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-900 text-lg font-bold text-white shadow-inner ring-2 ring-white">
             {resolvedAvatar && !imgError ? (
               <img
                 src={resolvedAvatar}
@@ -113,12 +114,14 @@ export default function ProfileSidebar({
                 onError={() => setImgError(true)}
               />
             ) : (
-              <span>{initial}</span>
+              <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+                {initial}
+              </span>
             )}
           </div>
-          <div>
-            <p className="font-semibold text-gray-900">{nameDisplay}</p>
-            <p className="text-sm text-gray-600" title={walletAddress}>
+          <div className="min-w-0">
+            <p className="truncate text-base font-bold text-gray-900">{nameDisplay}</p>
+            <p className="text-xs text-gray-500 font-mono" title={walletAddress}>
               {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
             </p>
           </div>

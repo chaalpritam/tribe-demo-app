@@ -93,7 +93,7 @@ export default function TweetCard({
       <div className="flex items-start gap-3">
         <Link
           href={`/profile?tid=${tid}`}
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 transition-colors hover:bg-gray-200"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-sm font-semibold text-white shadow-inner ring-2 ring-white transition-transform hover:scale-105"
         >
           {resolvedPfp && !imgError ? (
             <img
@@ -103,7 +103,9 @@ export default function TweetCard({
               onError={() => setImgError(true)}
             />
           ) : (
-            <span>{initial}</span>
+            <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+              {initial}
+            </span>
           )}
         </Link>
         <div className="min-w-0 flex-1">

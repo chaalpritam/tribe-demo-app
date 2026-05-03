@@ -134,7 +134,9 @@ function ProfilePage() {
   const initial = user?.username ? user.username[0].toUpperCase() : tidParam;
   const isMe = myTid === tid;
 
-  const resolvedPfp = user?.pfp_url ? resolveMediaUrl(user.pfp_url) : null;
+  const resolvedPfp = (user?.pfp_url || (user?.profile as any)?.pfpUrl || (user?.profile as any)?.pfp_url) 
+    ? resolveMediaUrl(user?.pfp_url || (user?.profile as any)?.pfpUrl || (user?.profile as any)?.pfp_url) 
+    : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -300,7 +302,7 @@ function ProfilePage() {
                   tid={f.follower_tid!}
                   username={f.username}
                   address={f.custody_address}
-                  pfpUrl={f.pfp_url}
+                  pfpUrl={f.pfp_url || (f as any).profile?.pfpUrl || (f as any).profile?.pfp_url}
                   myTid={myTid}
                 />
               ))
@@ -321,7 +323,7 @@ function ProfilePage() {
                   tid={f.following_tid!}
                   username={f.username}
                   address={f.custody_address}
-                  pfpUrl={f.pfp_url}
+                  pfpUrl={f.pfp_url || (f as any).profile?.pfpUrl || (f as any).profile?.pfp_url}
                   myTid={myTid}
                 />
               ))
@@ -397,7 +399,7 @@ function UserRow({
       className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
     >
       <div className="flex items-center gap-3">
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-xs font-semibold text-white">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-sm font-semibold text-white shadow-inner ring-2 ring-white transition-transform group-hover:scale-105">
           {resolvedPfp && !imgError ? (
             <img
               src={resolvedPfp}
@@ -406,7 +408,9 @@ function UserRow({
               onError={() => setImgError(true)}
             />
           ) : (
-            <span>{initial}</span>
+            <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+              {initial}
+            </span>
           )}
         </div>
         <div>
