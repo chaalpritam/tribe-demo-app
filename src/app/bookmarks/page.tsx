@@ -88,9 +88,9 @@ export default function BookmarksPage() {
           {bookmarks.map((b, i) => {
             const tweetHash = b.tweet_hash || (b as any).hash || (b as any).target_hash;
             const tweetTid = b.tweet_tid || (b as any).tid || (b as any).target_tid || (b as any).author_tid;
-            const tweetUsername = b.username || (b as any).author_username;
-            const tweetDisplayName = b.display_name || (b as any).author_display_name;
-            const tweetPfpUrl = b.pfp_url || (b as any).author_pfp_url;
+            const tweetUsername = b.username || (b as any).author_username || (b as any).tweet_username || (b as any).profile?.username;
+            const tweetDisplayName = b.display_name || (b as any).author_display_name || (b as any).tweet_display_name || (b as any).profile?.displayName;
+            const tweetPfpUrl = b.pfp_url || (b as any).author_pfp_url || (b as any).tweet_pfp_url || (b as any).profile?.pfpUrl || (b as any).profile?.pfp_url;
             
             const timestamp = b.timestamp 
               ? Math.floor(new Date(b.timestamp).getTime() / 1000)
