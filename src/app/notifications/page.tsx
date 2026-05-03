@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchNotifications } from "@/lib/api";
+import { fetchNotifications, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import ConnectionRequired from "@/components/ConnectionRequired";
 
@@ -22,6 +22,8 @@ type NotificationType =
 interface Notification {
   type: NotificationType;
   actor_tid: string;
+  actor_username?: string | null;
+  actor_pfp_url?: string | null;
   target_hash: string | null;
   preview: string | null;
   created_at: string;
@@ -198,7 +200,11 @@ export default function NotificationsPage() {
           {notifications.map((n, idx) => {
             const ts = new Date(n.created_at).getTime();
             const unread = ts > lastSeen;
-            const fromName = n.actor_tid ? `TID #${n.actor_tid}` : "Someone";
+          {notifications.map((n, idx) => {
+            const ts = new Date(n.created_at).getTime();
+            const unread = ts > lastSeen;
+            const fromName = n.actor_username ? `${n.actor_username}.tribe` : `TID #${n.actor_tid}`;
+            const initial = (n.actor_username || n.actor_tid)[0].toUpperCase();
             const tweetLink =
               TWEET_HASH_TYPES.includes(n.type) && n.target_hash
                 ? `/tweet?hash=${encodeURIComponent(n.target_hash)}`
@@ -211,10 +217,24 @@ export default function NotificationsPage() {
                   unread ? "bg-gray-50" : ""
                 }`}
               >
-                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700">
-                  <NotifIcon type={n.type} />
-                </span>
-                <div className="flex-1 min-w-0">
+                <Link
+                  href={`/profile?tid=${n.actor_tid}`}
+                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-xs font-bold text-white shadow-sm"
+                >
+                  {n.actor_pfp_url ? (
+                    <img
+                      src={resolveMediaUrl(n.actor_pfp_url) ?? ""}
+                      alt={fromName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>{initial}</span>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-gray-900 shadow-sm ring-1 ring-gray-100">
+                    <NotifIcon type={n.type} />
+                  </div>
+                </Link>
+                <div className="flex-1 min-w-0 ml-1">
                   <p className="text-sm text-gray-800">
                     <Link
                       href={`/profile?tid=${n.actor_tid}`}

@@ -225,7 +225,15 @@ function MessagesPage() {
         }
 
         if (convId || newTid) {
-          const recipientName = newTid ? `TID #${newTid}` : `TID #${otherTid}`;
+          const conv = conversations.find((c) => c.id === convId);
+          const usernameParam = searchParams.get("username");
+          const recipientName = conv?.other_username 
+            ? `${conv.other_username}.tribe` 
+            : usernameParam
+              ? `${usernameParam}.tribe`
+              : newTid 
+                ? `TID #${newTid}` 
+                : `TID #${otherTid}`;
           return (
             <div className="mx-auto flex max-w-2xl flex-col px-4 py-6" style={{ height: "100vh" }}>
               <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
@@ -525,7 +533,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
                   >
                     {!isMe && (
                       <p className="mb-0.5 text-[10px] uppercase opacity-60">
-                        TID #{msg.sender_tid}
+                        {msg.sender_username ? `${msg.sender_username}.tribe` : `TID #${msg.sender_tid}`}
                       </p>
                     )}
                     <p className="text-sm">{text}</p>

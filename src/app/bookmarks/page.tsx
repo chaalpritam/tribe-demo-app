@@ -16,6 +16,8 @@ interface Bookmark {
   timestamp: string;
   embeds: string[];
   username: string | null;
+  display_name?: string | null;
+  pfp_url?: string | null;
   created_at: string;
 }
 
@@ -83,18 +85,32 @@ export default function BookmarksPage() {
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          {bookmarks.map((b) => (
-            <TweetCard
-              key={b.tweet_hash}
-              text={b.text}
-              tid={Number(b.tweet_tid)}
-              timestamp={Math.floor(new Date(b.timestamp).getTime() / 1000)}
-              hash={b.tweet_hash}
-              username={b.username ?? undefined}
-              myTid={myTid ?? undefined}
-              embeds={b.embeds}
-            />
-          ))}
+          {bookmarks.map((b, i) => {
+            const tweetHash = b.tweet_hash || (b as any).hash || (b as any).target_hash;
+            const tweetTid = b.tweet_tid || (b as any).tid || (b as any).target_tid || (b as any).author_tid;
+            const tweetUsername = b.username || (b as any).author_username;
+            const tweetDisplayName = b.display_name || (b as any).author_display_name;
+            const tweetPfpUrl = b.pfp_url || (b as any).author_pfp_url;
+            
+            const timestamp = b.timestamp 
+              ? Math.floor(new Date(b.timestamp).getTime() / 1000)
+              : 0;
+
+            return (
+              <TweetCard
+                key={tweetHash ?? i}
+                text={b.text}
+                tid={Number(tweetTid)}
+                timestamp={timestamp}
+                hash={tweetHash}
+                username={tweetUsername ?? undefined}
+                displayName={tweetDisplayName ?? undefined}
+                pfpUrl={tweetPfpUrl ?? undefined}
+                myTid={myTid ?? undefined}
+                embeds={b.embeds}
+              />
+            );
+          })}
         </div>
       )}
     </div>

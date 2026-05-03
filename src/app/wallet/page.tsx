@@ -227,8 +227,8 @@ function ActivityItem({
           <span className="text-gray-500">
             {row.direction === "sent" ? "to" : "from"}
           </span>{" "}
-          <span className="font-mono text-gray-900">
-            TID #{counterpartyTid}
+          <span className="font-semibold text-gray-900">
+            {(row as any).counterparty_username ? `${(row as any).counterparty_username}.tribe` : `TID #${counterpartyTid}`}
           </span>
         </p>
         <p className="mt-0.5 text-xs text-gray-500">

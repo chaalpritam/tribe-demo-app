@@ -170,7 +170,7 @@ function ProfilePage() {
           {myTid && !isMe && (
             <div className="flex items-center gap-2">
               <Link
-                href={`/messages?to=${tid}`}
+                href={`/messages?to=${tid}&username=${user?.username ?? ""}`}
                 title="Send message"
                 aria-label="Send message"
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition-colors hover:border-gray-900 hover:text-gray-900"
