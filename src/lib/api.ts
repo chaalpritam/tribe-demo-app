@@ -367,6 +367,18 @@ export async function fetchUserReactions(
   return Array.isArray(data?.reactions) ? data.reactions : [];
 }
 
+/**
+ * Tweets this TID has currently liked. Returns the same row shape as
+ * /v1/feed/:tid (text, author username, display_name, pfp_url, etc.)
+ * so the result drops straight into TweetCard, plus a liked_at
+ * timestamp for ordering. Powers the "Liked" tab on the profile.
+ */
+export async function fetchUserLikes(tid: string) {
+  const res = await hubFetch(`/v1/users/${tid}/likes`);
+  if (!res.ok) throw new Error(`Failed to fetch liked tweets: ${res.statusText}`);
+  return res.json() as Promise<{ tweets: unknown[] }>;
+}
+
 // ── Karma ───────────────────────────────────────────────────────────
 
 export interface KarmaSummary {

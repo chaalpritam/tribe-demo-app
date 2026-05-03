@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing, resolveMediaUrl } from "@/lib/api";
+import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing, fetchUserLikes, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import FollowButton from "@/components/FollowButton";
@@ -73,7 +73,11 @@ function ProfilePage() {
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [followers, setFollowers] = useState<FollowEntry[]>([]);
   const [following, setFollowing] = useState<FollowEntry[]>([]);
-  const [tab, setTab] = useState<"tweets" | "followers" | "following">("tweets");
+  const [likes, setLikes] = useState<Tweet[]>([]);
+  const [likesLoaded, setLikesLoaded] = useState(false);
+  const [tab, setTab] = useState<
+    "tweets" | "followers" | "following" | "likes"
+  >("tweets");
   const [loading, setLoading] = useState(true);
   const [myTid, setMyTid] = useState<number | null>(null);
   const [imgError, setImgError] = useState(false);
@@ -85,6 +89,10 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!tidParam) return;
+    // Reset likes-loaded so navigating between profiles re-fetches
+    // the new owner's likes the next time the user opens the tab.
+    setLikes([]);
+    setLikesLoaded(false);
 
     async function load() {
       setLoading(true);
@@ -111,6 +119,30 @@ function ProfilePage() {
     }
     load();
   }, [tidParam]);
+
+  // Lazy-load likes the first time the Liked tab is opened — no
+  // point fetching for every profile visit since most viewers stay
+  // on the default Tweets tab.
+  useEffect(() => {
+    if (tab !== "likes" || !tidParam || likesLoaded) return;
+    let cancelled = false;
+    fetchUserLikes(tidParam)
+      .then((data) => {
+        if (cancelled) return;
+        setLikes((data?.tweets ?? []) as Tweet[]);
+        setLikesLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Mark loaded anyway so we don't re-spin on every render —
+        // fetchUserLikes already throws on non-2xx and the empty
+        // state will render naturally.
+        setLikesLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, tidParam, likesLoaded]);
 
   if (!connected) {
     return (
@@ -277,7 +309,7 @@ function ProfilePage() {
 
       {/* Tabs */}
       <div className="mt-4 flex border-b border-gray-200">
-        {(["tweets", "followers", "following"] as const).map((t) => (
+        {(["tweets", "followers", "following", "likes"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -374,6 +406,41 @@ function ProfilePage() {
                   myTid={myTid}
                 />
               ))
+            )}
+          </>
+        )}
+
+        {tab === "likes" && (
+          <>
+            {!likesLoaded ? (
+              <div className="flex justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+              </div>
+            ) : likes.length === 0 ? (
+              <p className="py-8 text-center text-gray-500">No liked tweets yet</p>
+            ) : (
+              likes.map((tweet, i) => {
+                const tweetTimestamp = tweet.timestamp
+                  ? typeof tweet.timestamp === "string"
+                    ? Math.floor(new Date(tweet.timestamp).getTime() / 1000)
+                    : tweet.timestamp
+                  : 0;
+                return (
+                  <TweetCard
+                    key={`liked:${tweet.hash ?? i}`}
+                    text={tweet.text ?? ""}
+                    tid={Number(tweet.tid ?? 0)}
+                    timestamp={tweetTimestamp}
+                    hash={tweet.hash}
+                    username={tweet.username ?? undefined}
+                    displayName={tweet.display_name ?? undefined}
+                    pfpUrl={tweet.pfp_url ?? undefined}
+                    myTid={myTid ?? undefined}
+                    channelId={tweet.channel_id}
+                    embeds={tweet.embeds}
+                  />
+                );
+              })
             )}
           </>
         )}
