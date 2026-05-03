@@ -18,6 +18,10 @@ interface User {
   following_count: string;
   followers_count: string;
   pfp_url?: string | null;
+  profile?: {
+    bio?: string;
+    displayName?: string;
+  };
 }
 
 interface Tweet {
@@ -135,10 +139,10 @@ function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       {/* Profile header */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-2xl font-bold text-white">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gray-900 text-3xl font-bold text-white shadow-inner ring-4 ring-white">
               {resolvedPfp && !imgError ? (
                 <img
                   src={resolvedPfp}
@@ -147,16 +151,33 @@ function ProfilePage() {
                   onError={() => setImgError(true)}
                 />
               ) : (
-                <span>{initial}</span>
+                <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+                  {initial}
+                </span>
               )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
+                {isMe && (
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                    You
+                  </span>
+                )}
+              </div>
               {user?.custody_address && (
-                <WalletAddress address={user.custody_address} />
+                <div className="mt-1">
+                  <WalletAddress address={user.custody_address} />
+                </div>
               )}
               {user?.registered_at && (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
                   Joined{" "}
                   {new Date(user.registered_at).toLocaleDateString("en-US", {
                     month: "short",
@@ -167,37 +188,37 @@ function ProfilePage() {
             </div>
           </div>
 
-          {myTid && !isMe && (
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/messages?to=${tid}&username=${user?.username ?? ""}`}
-                title="Send message"
-                aria-label="Send message"
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition-colors hover:border-gray-900 hover:text-gray-900"
-              >
-                <svg
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+          <div className="flex items-center gap-2">
+            {myTid && !isMe && (
+              <>
+                <Link
+                  href={`/messages?to=${tid}&username=${user?.username ?? ""}`}
+                  title="Send message"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-all hover:border-gray-900 hover:text-gray-900"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"
-                  />
-                </svg>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z" />
+                  </svg>
+                </Link>
+                <FollowButton myTid={myTid} targetTid={tid} />
+              </>
+            )}
+            {isMe && (
+              <Link
+                href="/settings"
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-gray-900 hover:text-gray-900"
+              >
+                Edit Profile
               </Link>
-              <FollowButton myTid={myTid} targetTid={tid} />
-            </div>
-          )}
-          {isMe && (
-            <span className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500">
-              Your profile
-            </span>
-          )}
+            )}
+          </div>
         </div>
+
+        {user?.profile?.bio && (
+          <p className="mt-6 text-base leading-relaxed text-gray-700">
+            {user.profile.bio}
+          </p>
+        )}
 
         <div className="mt-4 flex gap-6">
           <div>
