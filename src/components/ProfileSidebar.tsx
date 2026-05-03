@@ -170,40 +170,52 @@ export default function ProfileSidebar({
       {/* Who to follow */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
         <p className="text-sm font-semibold text-gray-900">Who to follow</p>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-3">
           {loadingSuggestions ? (
-            <div className="flex justify-center py-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+            <div className="flex justify-center py-4">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
             </div>
           ) : suggestedUsers.length === 0 ? (
-            <p className="text-center text-xs text-gray-500">No suggestions yet</p>
+            <div className="rounded-xl border border-dashed border-gray-200 py-6 text-center">
+              <p className="text-xs text-gray-400">No new suggestions</p>
+            </div>
           ) : (
             suggestedUsers.map((u) => (
-              <div key={u.tid} className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-start gap-2">
-                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-[10px] font-bold text-white">
-                    {u.pfp_url ? (
-                      <img
-                        src={resolveMediaUrl(u.pfp_url) ?? ""}
-                        alt={u.username ?? u.tid}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{(u.username || u.tid)[0].toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-gray-900">
-                      {u.username ? `${u.username}.tribe` : `TID #${u.tid}`}
-                    </p>
-                    {u.bio && (
-                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-tight text-gray-500">
-                        {u.bio}
+              <div 
+                key={u.tid} 
+                className="group relative flex flex-col gap-3 rounded-2xl border border-gray-50 bg-white p-3 shadow-sm transition-all hover:border-gray-200 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-900 text-xs font-bold text-white shadow-inner ring-2 ring-white transition-transform group-hover:scale-105">
+                      {u.pfp_url ? (
+                        <img
+                          src={resolveMediaUrl(u.pfp_url) ?? ""}
+                          alt={u.username ?? u.tid}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+                          {(u.username || u.tid)[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-gray-900">
+                        {u.username ? `${u.username}.tribe` : `TID #${u.tid}`}
                       </p>
-                    )}
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">
+                        TID #{u.tid}
+                      </p>
+                    </div>
                   </div>
+                  <FollowButton targetTid={Number(u.tid)} myTid={Number(tid)} />
                 </div>
-                <FollowButton targetTid={Number(u.tid)} myTid={Number(tid)} />
+                {u.bio && (
+                  <p className="line-clamp-2 text-xs leading-relaxed text-gray-600">
+                    {u.bio}
+                  </p>
+                )}
               </div>
             ))
           )}
