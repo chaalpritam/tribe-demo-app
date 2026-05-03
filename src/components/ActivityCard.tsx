@@ -140,7 +140,6 @@ function tweetLinkFor(row: ActivityRow): string | null {
 export default function ActivityCard({ tid }: ActivityCardProps) {
   const [rows, setRows] = useState<ActivityRow[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,7 +155,9 @@ export default function ActivityCard({ tid }: ActivityCardProps) {
     };
   }, [tid]);
 
-  const visible = expanded ? rows : rows.slice(0, 8);
+  // Sidebar shows a preview; the dedicated /activity page is the
+  // canonical full list (filterable, paginated by limit).
+  const visible = rows.slice(0, 8);
   const onChainCount = rows.filter((r) => ON_CHAIN_TYPES.has(r.type)).length;
 
   return (
@@ -238,15 +239,12 @@ export default function ActivityCard({ tid }: ActivityCardProps) {
               );
             })}
           </ul>
-          {rows.length > 8 && (
-            <button
-              type="button"
-              onClick={() => setExpanded((x) => !x)}
-              className="mt-3 text-xs text-blue-600 hover:underline"
-            >
-              {expanded ? "Show less" : `Show all ${rows.length}`}
-            </button>
-          )}
+          <Link
+            href="/activity"
+            className="mt-3 inline-block text-xs font-semibold text-blue-600 hover:underline"
+          >
+            See all →
+          </Link>
         </>
       )}
     </div>

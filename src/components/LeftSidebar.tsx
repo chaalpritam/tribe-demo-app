@@ -202,6 +202,21 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/activity",
+    label: "Activity",
+    icon: (active) => (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={active ? 2.4 : 1.8}
+        className="h-6 w-6"
+      >
+        <path d="M3 12h4l3-7 4 14 3-7h4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/profile",
     label: "Profile",
     match: (p) => p.startsWith("/profile"),
