@@ -22,11 +22,11 @@ const VERB: Record<ActivityType, string> = {
   dm_sent: "Sent a DM",
   tip_sent: "Sent a tip",
   tip_received: "Received a tip",
-  follow_pending: "Follow (settling on-chain)",
-  follow_settled: "Followed (on-chain)",
+  follow_pending: "Follow (settling onchain)",
+  follow_settled: "Followed (onchain)",
   follow_failed: "Follow failed",
-  unfollow_pending: "Unfollow (settling on-chain)",
-  unfollow_settled: "Unfollowed (on-chain)",
+  unfollow_pending: "Unfollow (settling onchain)",
+  unfollow_settled: "Unfollowed (onchain)",
   unfollow_failed: "Unfollow failed",
 };
 
@@ -165,7 +165,7 @@ export default function ActivityCard({ tid }: ActivityCardProps) {
       <div className="flex items-baseline justify-between">
         <p className="text-sm font-semibold text-gray-900">Activity</p>
         <p className="text-[10px] uppercase tracking-wider text-gray-400">
-          {onChainCount} on-chain · {rows.length} total
+          {onChainCount} onchain · {rows.length} total
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export default function ActivityCard({ tid }: ActivityCardProps) {
       ) : rows.length === 0 ? (
         <p className="mt-3 text-xs text-gray-500">
           No recorded activity yet. Post a tweet, follow someone, or send a tip
-          to start building your on-chain history.
+          to start building your onchain history.
         </p>
       ) : (
         <>

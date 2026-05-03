@@ -414,8 +414,8 @@ function PledgeModal({ tid, campaign, onClose, onPledged }: PledgeModalProps) {
             />
           </div>
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            This records an off-chain pledge. The actual fund movement
-            isn&apos;t handled by this envelope — use the on-chain
+            This records an offchain pledge. The actual fund movement
+            isn&apos;t handled by this envelope — use the onchain
             crowdfund-registry program for real settlement.
           </p>
 

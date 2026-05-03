@@ -20,11 +20,11 @@ const VERB: Record<ActivityType, string> = {
   dm_sent: "Sent a DM",
   tip_sent: "Sent a tip",
   tip_received: "Received a tip",
-  follow_pending: "Follow (settling on-chain)",
-  follow_settled: "Followed (on-chain)",
+  follow_pending: "Follow (settling onchain)",
+  follow_settled: "Followed (onchain)",
   follow_failed: "Follow failed",
-  unfollow_pending: "Unfollow (settling on-chain)",
-  unfollow_settled: "Unfollowed (on-chain)",
+  unfollow_pending: "Unfollow (settling onchain)",
+  unfollow_settled: "Unfollowed (onchain)",
   unfollow_failed: "Unfollow failed",
 };
 
@@ -44,8 +44,8 @@ type FilterId = "all" | "onchain" | "offchain";
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "onchain", label: "On-chain" },
-  { id: "offchain", label: "Signed off-chain" },
+  { id: "onchain", label: "Onchain" },
+  { id: "offchain", label: "Signed offchain" },
 ];
 
 function relativeTime(iso: string): string {
@@ -83,7 +83,7 @@ export default function ActivityPage() {
   return (
     <ConnectionRequired
       title="Activity"
-      description="Connect your wallet to see your full on-chain and signed activity log."
+      description="Connect your wallet to see your full onchain and signed activity log."
     >
       <ActivityView />
     </ConnectionRequired>
@@ -131,11 +131,11 @@ function ActivityView() {
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Activity</h1>
         <p className="text-xs uppercase tracking-wider text-gray-400">
-          {onChainCount} on-chain · {rows.length} total
+          {onChainCount} onchain · {rows.length} total
         </p>
       </div>
       <p className="mt-1 text-sm text-gray-500">
-        Every signed envelope your account produced and every on-chain op the
+        Every signed envelope your account produced and every onchain op the
         Ephemeral Rollup has settled for you. Solana tx links open in a block
         explorer for independent verification.
       </p>
@@ -168,7 +168,7 @@ function ActivityView() {
       ) : filtered.length === 0 ? (
         <p className="mt-8 text-center text-gray-500">
           {filter === "onchain"
-            ? "No on-chain activity yet — follow someone or send a tip to start your on-chain history."
+            ? "No onchain activity yet — follow someone or send a tip to start your onchain history."
             : filter === "offchain"
               ? "No signed envelopes yet — post a tweet, like something, or send a DM."
               : "No activity yet."}
@@ -200,7 +200,7 @@ function ActivityView() {
                             : "bg-gray-700 text-white"
                         }`}
                       >
-                        {onChain ? "On-chain" : "Signed"}
+                        {onChain ? "Onchain" : "Signed"}
                       </span>
                       <span className="text-sm font-semibold text-gray-900">
                         {VERB[row.type]}
