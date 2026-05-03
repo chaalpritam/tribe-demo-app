@@ -46,6 +46,7 @@ export default function TweetCard({
   hash,
   username,
   displayName: displayNameProp,
+  pfpUrl,
   myTid,
   replyCount,
   embeds,
@@ -53,14 +54,13 @@ export default function TweetCard({
 }: TweetCardProps) {
   const date = new Date(timestamp * 1000);
   const timeAgo = getTimeAgo(date);
-  const displayName =
-    displayNameProp?.trim() ||
-    (username ? `${username}.tribe` : `TID #${tid}`);
-  const initial = (displayNameProp?.trim() || username || String(tid))[0]
+  const nameLabel = username ? `${username}.tribe` : `TID #${tid}`;
+  const initial = (username || displayNameProp?.trim() || String(tid))[0]
     .toUpperCase();
   const isOwn = myTid !== undefined && myTid === tid;
   const [hidden, setHidden] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const handleDelete = useCallback(async () => {
     if (!hash || !isOwn || deleting) return;
@@ -86,14 +86,25 @@ export default function TweetCard({
 
   if (hidden) return null;
 
+  const resolvedPfp = pfpUrl ? resolveMediaUrl(pfpUrl) : null;
+
   return (
     <div className="border-b border-gray-200 px-4 py-4 transition-colors hover:bg-gray-50">
       <div className="flex items-start gap-3">
         <Link
           href={`/profile?tid=${tid}`}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 transition-colors hover:bg-gray-200"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 transition-colors hover:bg-gray-200"
         >
-          {initial}
+          {resolvedPfp && !imgError ? (
+            <img
+              src={resolvedPfp}
+              alt={nameLabel}
+              className="h-full w-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span>{initial}</span>
+          )}
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -101,10 +112,14 @@ export default function TweetCard({
               href={`/profile?tid=${tid}`}
               className="font-semibold text-gray-900 hover:underline"
             >
-              {displayName}
+              {nameLabel}
             </Link>
-            {username && (
-              <span className="text-sm text-gray-500">#{tid}</span>
+            <span className="text-sm text-gray-500">#{tid}</span>
+            {displayNameProp?.trim() && (
+              <>
+                <span className="text-sm text-gray-500">&middot;</span>
+                <span className="text-sm text-gray-500">{displayNameProp}</span>
+              </>
             )}
             <span className="text-sm text-gray-500">&middot;</span>
             <span

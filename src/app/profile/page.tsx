@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing } from "@/lib/api";
+import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import FollowButton from "@/components/FollowButton";
@@ -17,6 +17,7 @@ interface User {
   registered_at: string;
   following_count: string;
   followers_count: string;
+  pfp_url?: string | null;
 }
 
 interface Tweet {
@@ -25,6 +26,7 @@ interface Tweet {
   text?: string;
   timestamp?: string | number;
   username?: string | null;
+  pfp_url?: string | null;
 }
 
 interface FollowEntry {
@@ -32,6 +34,7 @@ interface FollowEntry {
   following_tid?: string;
   username: string | null;
   custody_address: string;
+  pfp_url?: string | null;
 }
 
 export default function ProfilePageWrapper() {
@@ -60,6 +63,7 @@ function ProfilePage() {
   const [tab, setTab] = useState<"tweets" | "followers" | "following">("tweets");
   const [loading, setLoading] = useState(true);
   const [myTid, setMyTid] = useState<number | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
@@ -71,6 +75,7 @@ function ProfilePage() {
 
     async function load() {
       setLoading(true);
+      setImgError(false);
       try {
         const [userData, feedData, followersData, followingData] =
           await Promise.allSettled([
@@ -125,14 +130,25 @@ function ProfilePage() {
   const initial = user?.username ? user.username[0].toUpperCase() : tidParam;
   const isMe = myTid === tid;
 
+  const resolvedPfp = user?.pfp_url ? resolveMediaUrl(user.pfp_url) : null;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       {/* Profile header */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-2xl font-bold text-white">
-              {initial}
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-2xl font-bold text-white">
+              {resolvedPfp && !imgError ? (
+                <img
+                  src={resolvedPfp}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <span>{initial}</span>
+              )}
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
@@ -243,6 +259,7 @@ function ProfilePage() {
                     timestamp={tweetTimestamp}
                     hash={tweet.hash}
                     username={tweet.username ?? undefined}
+                    pfpUrl={tweet.pfp_url ?? user?.pfp_url ?? undefined}
                     myTid={myTid ?? undefined}
                   />
                 );
@@ -262,6 +279,7 @@ function ProfilePage() {
                   tid={f.follower_tid!}
                   username={f.username}
                   address={f.custody_address}
+                  pfpUrl={f.pfp_url}
                   myTid={myTid}
                 />
               ))
@@ -282,6 +300,7 @@ function ProfilePage() {
                   tid={f.following_tid!}
                   username={f.username}
                   address={f.custody_address}
+                  pfpUrl={f.pfp_url}
                   myTid={myTid}
                 />
               ))
@@ -335,17 +354,21 @@ function UserRow({
   tid,
   username,
   address,
+  pfpUrl,
   myTid,
 }: {
   tid: string;
   username: string | null;
   address: string;
+  pfpUrl?: string | null;
   myTid: number | null;
 }) {
+  const [imgError, setImgError] = useState(false);
   const displayName = username ? `${username}.tribe` : `TID #${tid}`;
-  const initial = username ? username[0].toUpperCase() : tid;
+  const initial = (username || tid)[0].toUpperCase();
   const tidNum = parseInt(tid, 10);
   const isMe = myTid === tidNum;
+  const resolvedPfp = pfpUrl ? resolveMediaUrl(pfpUrl) : null;
 
   return (
     <a
@@ -353,8 +376,17 @@ function UserRow({
       className="flex items-center justify-between border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700">
-          {initial}
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-xs font-semibold text-white">
+          {resolvedPfp && !imgError ? (
+            <img
+              src={resolvedPfp}
+              alt={displayName}
+              className="h-full w-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span>{initial}</span>
+          )}
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-900">{displayName}</p>

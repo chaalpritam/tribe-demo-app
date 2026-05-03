@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { fetchUsers } from "@/lib/api";
+import { fetchUsers, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import FollowButton from "@/components/FollowButton";
 import PageHeader from "@/components/PageHeader";
@@ -18,6 +18,81 @@ interface User {
   registered_at: string;
   following_count: string;
   followers_count: string;
+  pfp_url?: string | null;
+}
+
+function ExploreUserCard({ 
+  user, 
+  myTid, 
+  onNavigate 
+}: { 
+  user: User, 
+  myTid: number | null, 
+  onNavigate: (tid: string) => void 
+}) {
+  const [imgError, setImgError] = useState(false);
+  const tid = parseInt(user.tid, 10);
+  const displayName = user.username
+    ? `${user.username}.tribe`
+    : `TID #${user.tid}`;
+  const initial = (user.username || user.tid)[0].toUpperCase();
+  const isMe = myTid === tid;
+  const resolvedPfp = user.pfp_url ? resolveMediaUrl(user.pfp_url) : null;
+
+  return (
+    <div className="group relative flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm">
+      <div
+        className="flex cursor-pointer items-center gap-4"
+        onClick={() => onNavigate(user.tid)}
+      >
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gray-900 text-lg font-bold text-white shadow-inner ring-2 ring-white transition-transform group-hover:scale-105">
+          {resolvedPfp && !imgError ? (
+            <img
+              src={resolvedPfp}
+              alt={displayName}
+              className="h-full w-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
+              {initial}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-bold text-gray-900">
+              {displayName}
+            </p>
+            {isMe && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                You
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 truncate text-xs font-medium text-gray-500">
+            {user.custody_address.slice(0, 6)}...
+            {user.custody_address.slice(-6)}
+          </p>
+          <div className="mt-2 flex items-center gap-3 text-[11px] font-semibold text-gray-400">
+            <span className="flex items-center gap-1">
+              <span className="text-gray-900">{Number(user.followers_count)}</span> Followers
+            </span>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span className="flex items-center gap-1">
+              <span className="text-gray-900">{Number(user.following_count)}</span> Following
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="ml-4 shrink-0">
+        {myTid && !isMe && (
+          <FollowButton myTid={myTid} targetTid={tid} />
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function ExplorePage() {
@@ -80,55 +155,15 @@ export default function ExplorePage() {
           body="Be the first to register a Tribe identity."
         />
       ) : (
-        <div className="space-y-2">
-          {users.map((user) => {
-            const tid = parseInt(user.tid, 10);
-            const displayName = user.username
-              ? `${user.username}.tribe`
-              : `TID #${user.tid}`;
-            const initial = user.username
-              ? user.username[0].toUpperCase()
-              : user.tid;
-            const isMe = myTid === tid;
-
-            return (
-              <div
-                key={user.tid}
-                className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
-              >
-                <div
-                  className="flex cursor-pointer items-center gap-3"
-                  onClick={() => router.push(`/profile?tid=${user.tid}`)}
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
-                    {initial}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {displayName}
-                      {isMe && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          (you)
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user.custody_address.slice(0, 4)}...
-                      {user.custody_address.slice(-4)}
-                      {" · "}
-                      {Number(user.followers_count)} followers
-                      {" · "}
-                      {Number(user.following_count)} following
-                    </p>
-                  </div>
-                </div>
-
-                {myTid && !isMe && (
-                  <FollowButton myTid={myTid} targetTid={tid} />
-                )}
-              </div>
-            );
-          })}
+        <div className="space-y-4">
+          {users.map((user) => (
+            <ExploreUserCard 
+              key={user.tid} 
+              user={user} 
+              myTid={myTid} 
+              onNavigate={(tid) => router.push(`/profile?tid=${tid}`)} 
+            />
+          ))}
         </div>
       )}
     </div>

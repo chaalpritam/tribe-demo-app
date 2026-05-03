@@ -104,7 +104,11 @@ export default function ProfileSidebar({
     }
   }, [publicKey, signMessage, tid, followInput]);
 
+  const [imgError, setImgError] = useState(false);
+
+  const initial = (displayName || username || tid)[0].toUpperCase();
   const nameDisplay = displayName ?? (username ? `${username}.tribe` : `TID #${tid}`);
+  const resolvedAvatar = avatarUrl ? resolveMediaUrl(avatarUrl) : null;
 
   return (
     <div className="space-y-4">
@@ -117,13 +121,18 @@ export default function ProfileSidebar({
       {/* Profile card */}
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div className="flex items-center gap-3">
-          {avatarUrl ? (
-            <img src={resolveMediaUrl(avatarUrl) ?? ""} alt="User avatar" className="h-12 w-12 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-900 text-lg font-bold text-white">
-              {username ? username[0].toUpperCase() : tid}
-            </div>
-          )}
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-lg font-bold text-white">
+            {resolvedAvatar && !imgError ? (
+              <img
+                src={resolvedAvatar}
+                alt="User avatar"
+                className="h-full w-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
+          </div>
           <div>
             <p className="font-semibold text-gray-900">{nameDisplay}</p>
             <p className="text-sm text-gray-600" title={walletAddress}>
