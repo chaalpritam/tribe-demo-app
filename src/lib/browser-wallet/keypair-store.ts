@@ -13,6 +13,12 @@ interface StoredWallet {
    * tens of milliseconds).
    */
   secretKeyB58: string;
+  /**
+   * BIP44 account index this keypair was derived at (the third segment
+   * of `m/44'/501'/<i>'/0'`). Optional so wallets stored before
+   * multi-account support read back as account 0.
+   */
+  accountIndex?: number;
 }
 
 /**
@@ -45,15 +51,37 @@ export function loadStoredMnemonic(): string | null {
   }
 }
 
-export async function saveMnemonic(mnemonic: string): Promise<Keypair> {
+export async function saveMnemonic(
+  mnemonic: string,
+  accountIndex: number = 0,
+): Promise<Keypair> {
   if (typeof window === "undefined") {
     throw new Error("Cannot save wallet outside browser");
   }
-  const keypair = await keypairFromMnemonic(mnemonic);
+  const keypair = await keypairFromMnemonic(mnemonic, accountIndex);
   const secretKeyB58 = bs58.encode(keypair.secretKey);
-  const payload: StoredWallet = { mnemonic, secretKeyB58 };
+  const payload: StoredWallet = { mnemonic, secretKeyB58, accountIndex };
   window.localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(payload));
   return keypair;
+}
+
+/**
+ * Persist an already-derived keypair without recomputing the BIP39 →
+ * ed25519 derivation. Used by the import flow: it derives several
+ * candidate accounts, the user picks one, and we store the chosen
+ * keypair directly.
+ */
+export function saveKeypair(
+  mnemonic: string,
+  keypair: Keypair,
+  accountIndex: number,
+): void {
+  if (typeof window === "undefined") {
+    throw new Error("Cannot save wallet outside browser");
+  }
+  const secretKeyB58 = bs58.encode(keypair.secretKey);
+  const payload: StoredWallet = { mnemonic, secretKeyB58, accountIndex };
+  window.localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(payload));
 }
 
 export function clearStoredKeypair(): void {
