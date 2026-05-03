@@ -42,6 +42,7 @@ function loadAppKey(): Uint8Array | null {
 export default function SettingsPage() {
   const { connected } = useWallet();
   const [myTid, setMyTid] = useState<string | null>(null);
+  const [myUsername, setMyUsername] = useState<string | null>(null);
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
   // Snapshot of what's on the server — used to compute which fields
   // actually changed so we only re-publish what's needed.
@@ -80,6 +81,7 @@ export default function SettingsPage() {
         };
         setForm(next);
         setOriginal(next);
+        setMyUsername(user?.username ?? null);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -164,7 +166,10 @@ export default function SettingsPage() {
     try {
       setIsEncrypting(true);
       const payload = createBackupPayload();
-      const filename = form.displayName || myTid || "tribe-account";
+      // Filename matches the user's .tribe handle when they have one
+      // (so `alice` → `alice.tribe.enc`); otherwise falls back to the
+      // numeric TID, then a generic name if neither is loaded yet.
+      const filename = myUsername || myTid || "tribe-account";
       const encrypted = await encryptBackup(payload, backupPassword);
       const blob = new Blob([encrypted], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
@@ -185,7 +190,7 @@ export default function SettingsPage() {
     } finally {
       setIsEncrypting(false);
     }
-  }, [form.displayName, myTid, backupPassword, backupPasswordConfirm]);
+  }, [myUsername, myTid, backupPassword, backupPasswordConfirm]);
 
   return (
     <ConnectionRequired>
