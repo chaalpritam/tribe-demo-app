@@ -338,6 +338,35 @@ export async function fetchCrowdfundPledges(
   return res.json();
 }
 
+// ── Reactions ───────────────────────────────────────────────────────
+
+export type ReactionSubtype = 1 | 2; // 1 = LIKE, 2 = RECAST
+
+export interface UserReactionRow {
+  target_hash: string;
+  /** Stored as a string by the hub (`messages.text`). "1" = LIKE, "2" = RECAST. */
+  reaction_type: string;
+  reacted_at: string;
+}
+
+/**
+ * List the user's currently-active reactions (REACTION_ADD without
+ * a later REACTION_REMOVE), optionally filtered by subtype. Used
+ * by LikeButton + RetweetButton to hydrate their pressed state on
+ * mount, since the feed payload doesn't carry per-tweet liked-by-me
+ * flags yet.
+ */
+export async function fetchUserReactions(
+  tid: string,
+  subtype?: ReactionSubtype,
+): Promise<UserReactionRow[]> {
+  const qs = subtype !== undefined ? `?type=${subtype}` : "";
+  const res = await hubFetch(`/v1/users/${tid}/reactions${qs}`);
+  if (!res.ok) return [];
+  const data = (await res.json()) as { reactions?: UserReactionRow[] };
+  return Array.isArray(data?.reactions) ? data.reactions : [];
+}
+
 // ── Karma ───────────────────────────────────────────────────────────
 
 export interface KarmaSummary {

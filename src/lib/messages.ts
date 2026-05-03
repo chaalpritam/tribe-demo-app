@@ -364,17 +364,26 @@ export async function signAndRemoveTweet(args: {
 }
 
 /**
- * Toggle a like on a target tweet.
- *   add=true  → REACTION_ADD (type 3) with reaction.type=1 (LIKE)
- *   add=false → REACTION_REMOVE (type 4)
+ * Subtype byte stored on REACTION_ADD envelopes, mirroring
+ * tribe-protocol's ReactionType enum: 1 = LIKE, 2 = RECAST.
  *
- * Hub stores REACTIONs in the messages table (type 3 / 4). Reads
- * count likes by COUNT(*) of unique signers with REACTION_ADD that
- * isn't followed by a REACTION_REMOVE from the same signer.
+ * Note: REACTION_REMOVE on the hub clears EVERY reaction the user
+ * has on a target regardless of subtype (see
+ * tribe-hub/src/api/routes/users.ts), so toggling off a retweet
+ * also clears a like on the same tweet. Acceptable for v1.
  */
-export async function signAndLikeTweet(args: {
+export type ReactionSubtype = 1 | 2;
+
+/**
+ * Internal: build + submit a signed REACTION envelope.
+ *   add=true  → REACTION_ADD (type 3) with body.type=subtype
+ *   add=false → REACTION_REMOVE (type 4); subtype is ignored by the
+ *               hub but included so the wire shape stays consistent.
+ */
+async function signAndReact(args: {
   tid: number;
   targetHash: string;
+  subtype: ReactionSubtype;
   add: boolean;
   signingKeySecret: Uint8Array;
 }): Promise<{ hash: string }> {
@@ -384,7 +393,7 @@ export async function signAndLikeTweet(args: {
     timestamp: Math.floor(Date.now() / 1000),
     network: 2, // DEVNET
     body: {
-      type: 1, // LIKE (vs RECAST=2)
+      type: args.subtype,
       target_hash: args.targetHash,
     },
   };
@@ -411,10 +420,38 @@ export async function signAndLikeTweet(args: {
 
   if (!res.ok) {
     const errBody = await res.text();
-    throw new Error(`Like ${args.add ? "add" : "remove"} failed: ${res.status} ${errBody}`);
+    throw new Error(
+      `Reaction ${args.add ? "add" : "remove"} (subtype ${args.subtype}) failed: ${res.status} ${errBody}`,
+    );
   }
 
   return res.json();
+}
+
+/**
+ * Toggle a like (REACTION subtype 1) on a target tweet.
+ */
+export async function signAndLikeTweet(args: {
+  tid: number;
+  targetHash: string;
+  add: boolean;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return signAndReact({ ...args, subtype: 1 });
+}
+
+/**
+ * Toggle a retweet (REACTION subtype 2 / RECAST) on a target tweet.
+ * Same envelope path as a like — the hub's submit route accepts both
+ * subtypes via REACTION_ADD; only body.type differs.
+ */
+export async function signAndRetweet(args: {
+  tid: number;
+  targetHash: string;
+  add: boolean;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return signAndReact({ ...args, subtype: 2 });
 }
 
 /**

@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { signAndLikeTweet } from "@/lib/messages";
+import { fetchUserReactions } from "@/lib/api";
 
 interface LikeButtonProps {
   tweetHash: string;
   tid: number;
   initialCount?: number;
+  /** When provided, skips the server lookup on mount. */
   initialLiked?: boolean;
 }
 
@@ -21,11 +23,34 @@ export default function LikeButton({
   tweetHash,
   tid,
   initialCount = 0,
-  initialLiked = false,
+  initialLiked,
 }: LikeButtonProps) {
-  const [liked, setLiked] = useState(initialLiked);
+  const [liked, setLiked] = useState(initialLiked ?? false);
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
+
+  // Without this fallback, the heart resets to gray on every reload
+  // even when the user has already liked the tweet — and clicking
+  // again writes a duplicate REACTION_ADD into the messages table.
+  // Same fallback BookmarkButton uses; skipped when the parent
+  // already knows the liked state.
+  useEffect(() => {
+    if (initialLiked !== undefined) return;
+    const myTid = localStorage.getItem(STORAGE_KEYS.tid);
+    if (!myTid) return;
+    let cancelled = false;
+    fetchUserReactions(myTid, 1)
+      .then((reactions) => {
+        if (cancelled) return;
+        setLiked(reactions.some((r) => r.target_hash === tweetHash));
+      })
+      .catch(() => {
+        // Non-fatal — leave default state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tweetHash, initialLiked]);
 
   const handleToggle = useCallback(async () => {
     if (loading) return;

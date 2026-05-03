@@ -1,40 +1,71 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { hubFetch } from "@/lib/failover";
+import { signAndRetweet } from "@/lib/messages";
+import { fetchUserReactions } from "@/lib/api";
 
 interface RetweetButtonProps {
   tweetHash: string;
+  /** When provided, skips the server lookup on mount. */
+  initialRetweeted?: boolean;
 }
 
-export default function RetweetButton({ tweetHash }: RetweetButtonProps) {
-  const [retweeted, setRetweeted] = useState(false);
+function loadAppKey(): Uint8Array | null {
+  const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
+  if (!stored) return null;
+  return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+}
+
+export default function RetweetButton({
+  tweetHash,
+  initialRetweeted,
+}: RetweetButtonProps) {
+  const [retweeted, setRetweeted] = useState(initialRetweeted ?? false);
   const [loading, setLoading] = useState(false);
 
+  // Hydrate from the hub so the icon reflects persisted state on
+  // reload. Without this, every reload starts grey and the user
+  // can re-retweet the same tweet repeatedly.
+  useEffect(() => {
+    if (initialRetweeted !== undefined) return;
+    const myTid = localStorage.getItem(STORAGE_KEYS.tid);
+    if (!myTid) return;
+    let cancelled = false;
+    fetchUserReactions(myTid, 2)
+      .then((reactions) => {
+        if (cancelled) return;
+        setRetweeted(reactions.some((r) => r.target_hash === tweetHash));
+      })
+      .catch(() => {
+        // Non-fatal — leave default state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tweetHash, initialRetweeted]);
+
   const handleToggle = useCallback(async () => {
-    const tid = localStorage.getItem(STORAGE_KEYS.tid);
-    if (!tid || loading) return;
+    if (loading) return;
+    const tidStr = localStorage.getItem(STORAGE_KEYS.tid);
+    const appKey = loadAppKey();
+    if (!tidStr || !appKey) return;
+
+    const tid = parseInt(tidStr, 10);
+    const wantRetweeted = !retweeted;
+    // Optimistic flip; revert on failure.
+    setRetweeted(wantRetweeted);
     setLoading(true);
     try {
-      if (retweeted) {
-        await hubFetch("/v1/retweet", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tid, tweetHash }),
-        });
-        setRetweeted(false);
-      } else {
-        await hubFetch("/v1/retweet", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tid, tweetHash }),
-        });
-        setRetweeted(true);
-      }
-    } catch {
-      // Revert optimistic state on failure
-      setRetweeted((prev) => !prev);
+      await signAndRetweet({
+        tid,
+        targetHash: tweetHash,
+        add: wantRetweeted,
+        signingKeySecret: appKey,
+      });
+    } catch (err) {
+      console.error("Retweet toggle failed:", err);
+      setRetweeted(!wantRetweeted);
     } finally {
       setLoading(false);
     }
