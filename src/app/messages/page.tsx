@@ -160,15 +160,31 @@ function MessagesPage() {
     getDmKey(tid).then(setOtherPubkey);
   }, [newTid, otherTid]);
 
-  // Figure out the other TID from conversation messages
+  // Figure out the other TID. Prefer the cached conversation row when
+  // the list view loaded it; otherwise derive from convId itself —
+  // the hub builds it as `min(a,b):max(a,b)`, so the part that isn't
+  // myTid is the peer. Without this, deep-linking to /messages?conv=
+  // (refresh, mobile notification click, bookmark) leaves otherTid
+  // null, which leaves otherPubkey null, which disables reply with
+  // "Recipient has no DM key" even when both parties have keys.
   useEffect(() => {
-    if (conversations.length > 0 && convId) {
+    if (!convId || !myTid) return;
+    if (conversations.length > 0) {
       const conv = conversations.find((c) => c.id === convId);
       if (conv) {
         setOtherTid(conv.other_tid);
+        return;
       }
     }
-  }, [conversations, convId]);
+    const parts = convId.split(":");
+    if (parts.length === 2) {
+      const peer =
+        parts[0] === myTid ? parts[1] :
+        parts[1] === myTid ? parts[0] :
+        null;
+      if (peer) setOtherTid(peer);
+    }
+  }, [conversations, convId, myTid]);
 
   const handleSend = useCallback(async () => {
     if (!myTid || !messageInput.trim() || sending) return;
