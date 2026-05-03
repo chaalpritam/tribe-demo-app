@@ -6,11 +6,13 @@ import {
   fetchUser,
   fetchFollowing,
   fetchKarma,
+  fetchUsers,
   resolveMediaUrl,
   type KarmaSummary,
 } from "@/lib/api";
 import { erFollow } from "@/lib/er-client";
 import LogoutButton from "./LogoutButton";
+import FollowButton from "./FollowButton";
 
 import WalletButton from "./WalletButton";
 
@@ -33,10 +35,9 @@ export default function ProfileSidebar({
   const [followingList, setFollowingList] = useState<
     { following_tid: string; username: string | null }[]
   >([]);
-  const [followInput, setFollowInput] = useState("");
-  const [followLoading, setFollowLoading] = useState(false);
-  const [followError, setFollowError] = useState<string | null>(null);
   const [karma, setKarma] = useState<KarmaSummary | null>(null);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -72,37 +73,19 @@ export default function ProfileSidebar({
     loadProfile();
   }, [tid]);
 
-  const handleFollow = useCallback(async () => {
-    if (!publicKey || !signMessage || !followInput.trim()) return;
-    const targetTid = parseInt(followInput.trim(), 10);
-    if (isNaN(targetTid) || targetTid <= 0) {
-      setFollowError("Enter a valid TID number");
-      return;
-    }
-    if (targetTid === parseInt(tid, 10)) {
-      setFollowError("Can't follow yourself");
-      return;
-    }
-
-    setFollowLoading(true);
-    setFollowError(null);
-    try {
-      const myTid = parseInt(tid, 10);
-      await erFollow(myTid, targetTid, publicKey.toBase58(), signMessage);
-      setFollowInput("");
-      setFollowingCount((c) => c + 1);
-      setFollowingList((list) => [
-        { following_tid: String(targetTid), username: null },
-        ...list,
-      ]);
-    } catch (err) {
-      setFollowError(
-        err instanceof Error ? err.message : "Failed to follow"
-      );
-    } finally {
-      setFollowLoading(false);
-    }
-  }, [publicKey, signMessage, tid, followInput]);
+  useEffect(() => {
+    setLoadingSuggestions(true);
+    fetchUsers()
+      .then((data) => {
+        // Filter out self and already following
+        const filtered = (data?.users ?? [])
+          .filter((u: any) => u.tid !== tid && !followingList.some(f => f.following_tid === u.tid))
+          .slice(0, 3);
+        setSuggestedUsers(filtered);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSuggestions(false));
+  }, [tid, followingList]);
 
   const [imgError, setImgError] = useState(false);
 
@@ -184,28 +167,47 @@ export default function ProfileSidebar({
         )}
       </div>
 
-      {/* Follow someone */}
+      {/* Who to follow */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <p className="text-sm font-semibold text-gray-900">Follow a user</p>
-        <div className="mt-2 flex gap-2">
-          <input
-            type="text"
-            value={followInput}
-            onChange={(e) => setFollowInput(e.target.value)}
-            placeholder="Enter TID"
-            className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 outline-none focus:border-gray-900"
-          />
-          <button
-            onClick={handleFollow}
-            disabled={followLoading || !followInput.trim()}
-            className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-          >
-            {followLoading ? "..." : "Follow"}
-          </button>
+        <p className="text-sm font-semibold text-gray-900">Who to follow</p>
+        <div className="mt-4 space-y-4">
+          {loadingSuggestions ? (
+            <div className="flex justify-center py-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+            </div>
+          ) : suggestedUsers.length === 0 ? (
+            <p className="text-center text-xs text-gray-500">No suggestions yet</p>
+          ) : (
+            suggestedUsers.map((u) => (
+              <div key={u.tid} className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-start gap-2">
+                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-900 text-[10px] font-bold text-white">
+                    {u.pfp_url ? (
+                      <img
+                        src={resolveMediaUrl(u.pfp_url) ?? ""}
+                        alt={u.username ?? u.tid}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{(u.username || u.tid)[0].toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-gray-900">
+                      {u.username ? `${u.username}.tribe` : `TID #${u.tid}`}
+                    </p>
+                    {u.bio && (
+                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-tight text-gray-500">
+                        {u.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <FollowButton targetTid={Number(u.tid)} myTid={Number(tid)} />
+              </div>
+            ))
+          )}
         </div>
-        {followError && (
-          <p className="mt-1 text-xs text-red-600">{followError}</p>
-        )}
       </div>
 
       {/* Following list */}
