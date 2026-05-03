@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchBookmarks } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import TweetCard from "@/components/TweetCard";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ConnectionRequired from "@/components/ConnectionRequired";
 
 interface Bookmark {
   tweet_hash: string;
@@ -22,7 +22,6 @@ interface Bookmark {
 }
 
 export default function BookmarksPage() {
-  const { connected } = useWallet();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,28 +29,24 @@ export default function BookmarksPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.tid);
-    if (stored) setMyTid(parseInt(stored, 10));
-  }, []);
-
-  useEffect(() => {
-    if (!myTid) return;
-    setLoading(true);
+    if (!stored) {
+      setLoading(false);
+      return;
+    }
+    const tid = parseInt(stored, 10);
+    setMyTid(tid);
     setError(null);
-    fetchBookmarks(String(myTid))
+    fetchBookmarks(String(tid))
       .then((data) => setBookmarks(data?.bookmarks ?? []))
       .catch(() => setError("Failed to load bookmarks"))
       .finally(() => setLoading(false));
-  }, [myTid]);
-
-  if (!connected) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Connect your wallet to view bookmarks</p>
-      </div>
-    );
-  }
+  }, []);
 
   return (
+    <ConnectionRequired
+      title="Bookmarks"
+      description="Connect your wallet to view tweets you've saved for later."
+    >
     <div className="mx-auto max-w-2xl px-4 py-6">
       <PageHeader
         title="Bookmarks"
@@ -114,5 +109,6 @@ export default function BookmarksPage() {
         </div>
       )}
     </div>
+    </ConnectionRequired>
   );
 }
