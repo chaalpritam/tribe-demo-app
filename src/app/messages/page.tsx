@@ -94,12 +94,14 @@ function MessagesPage() {
     setMyTid(stored);
     const appKey = loadAppKey();
     if (!appKey) return;
-    // Re-advertise the persisted DM pubkey on every load. Idempotent
-    // when the keypair hasn't changed; recovers the registration if
-    // the user wiped local data and a fresh keypair was generated.
-    // Failures are non-fatal; the user can still browse conversations.
-    const pubkey = getDmPublicKey();
-    signAndRegisterDmKey(parseInt(stored, 10), pubkey, appKey).catch((err) => {
+    const myTidNum = parseInt(stored, 10);
+    // Re-advertise this TID's persisted DM pubkey on every load.
+    // Idempotent when the per-TID keypair hasn't changed; recovers
+    // the registration if the user wiped local data and a fresh
+    // keypair was generated. Failures are non-fatal; the user can
+    // still browse conversations.
+    const pubkey = getDmPublicKey(myTidNum);
+    signAndRegisterDmKey(myTidNum, pubkey, appKey).catch((err) => {
       console.warn("DM key register failed:", err);
     });
   }, []);
@@ -182,13 +184,18 @@ function MessagesPage() {
     setSending(true);
     setError(null);
     try {
-      const { encrypted, nonce } = encryptMessage(messageInput.trim(), otherPubkey);
+      const myTidNum = parseInt(myTid, 10);
+      const { encrypted, nonce } = encryptMessage(
+        messageInput.trim(),
+        otherPubkey,
+        myTidNum,
+      );
       const sent = await signAndSendDm({
-        senderTid: parseInt(myTid, 10),
+        senderTid: myTidNum,
         recipientTid: parseInt(recipientTid, 10),
         ciphertext: encrypted,
         nonce,
-        senderX25519: getDmPublicKey(),
+        senderX25519: getDmPublicKey(myTidNum),
         signingKeySecret: appKey,
       });
       setMessageInput("");
@@ -269,8 +276,13 @@ function MessagesPage() {
                       // rotated since we sent).
                       const peerKey = isMe ? otherPubkey : msg.sender_x25519;
                       let text = "[encrypted]";
-                      if (peerKey) {
-                        const decrypted = decryptMessage(msg.encrypted_text, msg.nonce, peerKey);
+                      if (peerKey && myTid) {
+                        const decrypted = decryptMessage(
+                          msg.encrypted_text,
+                          msg.nonce,
+                          peerKey,
+                          parseInt(myTid, 10),
+                        );
                         if (decrypted) text = decrypted;
                       }
                       return (
@@ -456,6 +468,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
     setSending(true);
     setError(null);
     try {
+      const myTidNum = parseInt(myTid, 10);
       // Encrypt the same plaintext once per member, including the
       // sender, so the sender's own UI can decrypt their own message
       // on read (the hub's per-recipient join only returns rows
@@ -468,7 +481,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
       for (const m of group.members) {
         const pubkey = memberKeys.get(m.tid);
         if (!pubkey) continue;
-        const { encrypted, nonce } = encryptMessage(text.trim(), pubkey);
+        const { encrypted, nonce } = encryptMessage(text.trim(), pubkey, myTidNum);
         ciphertexts.push({
           recipient_tid: parseInt(m.tid, 10),
           ciphertext: encrypted,
@@ -481,9 +494,9 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
         return;
       }
       await signAndSendGroupMessage({
-        tid: parseInt(myTid, 10),
+        tid: myTidNum,
         groupId: group.id,
-        senderX25519: getDmPublicKey(),
+        senderX25519: getDmPublicKey(myTidNum),
         ciphertexts,
         signingKeySecret: appKey,
       });
@@ -531,6 +544,7 @@ function GroupConversationView({ groupId, myTid }: GroupConversationViewProps) {
                 msg.ciphertext,
                 msg.nonce,
                 msg.sender_x25519,
+                parseInt(myTid, 10),
               );
               const text = decrypted ?? "[encrypted]";
               return (

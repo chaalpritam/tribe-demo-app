@@ -1,6 +1,10 @@
 import { STORAGE_KEYS } from "./constants";
 import { WALLET_STORAGE_KEY } from "./browser-wallet/keypair-store";
-import { DM_KEY_STORAGE } from "./crypto";
+import { DM_KEY_STORAGE_PREFIX, LEGACY_DM_KEY_STORAGE } from "./crypto";
+
+function dmKeyStorageFor(tid: string): string {
+  return `${DM_KEY_STORAGE_PREFIX}${tid}`;
+}
 
 const SUPPORTED_BACKUP_VERSION = 1;
 export const BACKUP_TIMESTAMP_KEY = "tribe_last_backup_at";
@@ -43,15 +47,23 @@ export function getLastBackupAt(): number | null {
 }
 
 export function createBackupPayload(): BackupData {
+  const tid = localStorage.getItem(STORAGE_KEYS.tid);
+  // Per-TID DM keypair lives at `tribe_dm_keypair_<tid>`. Falls back
+  // to the legacy global slot for browsers that haven't migrated yet
+  // so older installs don't lose their DM secret on backup.
+  const dmKeypair = tid
+    ? (localStorage.getItem(dmKeyStorageFor(tid)) ??
+       localStorage.getItem(LEGACY_DM_KEY_STORAGE))
+    : localStorage.getItem(LEGACY_DM_KEY_STORAGE);
   return {
     version: 1,
     timestamp: Date.now(),
     data: {
-      tid: localStorage.getItem(STORAGE_KEYS.tid),
+      tid,
       tidWallet: localStorage.getItem(STORAGE_KEYS.tidWallet),
       appKeySecret: localStorage.getItem(STORAGE_KEYS.appKeySecret),
       browserWallet: localStorage.getItem(WALLET_STORAGE_KEY),
-      dmKeypair: sessionStorage.getItem(DM_KEY_STORAGE),
+      dmKeypair,
     },
   };
 }
@@ -173,6 +185,11 @@ export function applyBackup(backup: BackupData) {
   localStorage.setItem(WALLET_STORAGE_KEY, data.browserWallet);
   // Auto-select Browser Wallet so the app connects immediately on reload
   localStorage.setItem("walletName", '"Browser Wallet"');
-  if (data.dmKeypair) sessionStorage.setItem(DM_KEY_STORAGE, data.dmKeypair);
+  // Restore the DM keypair into this TID's per-TID slot. Older v1
+  // backups stored the (single) global keypair here too, so the
+  // payload shape is unchanged.
+  if (data.dmKeypair && data.tid) {
+    localStorage.setItem(dmKeyStorageFor(data.tid), data.dmKeypair);
+  }
   markBackupComplete();
 }
