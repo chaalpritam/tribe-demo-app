@@ -121,6 +121,17 @@ The Bonjour `*.local` hostname is still useful for `ping` / `curl` / iPhone Safa
 - tweetnacl (ed25519 signing)
 - blake3 (WASM, content-addressable hashing)
 
+## Related Repos
+
+| Repo | Description |
+|------|-------------|
+| [tribe-protocol](../tribe-protocol) | Solana programs (Anchor) — identity, app keys, usernames, social graph, hub registry |
+| [tribe-sdk](../tribe-sdk) | TypeScript SDK shared by every client |
+| [tribe-hub](../tribe-hub) | Decentralized hub — message storage, indexing, gossip |
+| [tribe-er-server](../tribe-er-server) | Ephemeral Rollup sequencer — instant follows |
+| [tribeapp.wtf](../tribeapp.wtf) | Consumer-facing web app + landing page |
+| [tribe-ios](../tribe-ios) | Native SwiftUI iOS client |
+
 ## License
 
 MIT
