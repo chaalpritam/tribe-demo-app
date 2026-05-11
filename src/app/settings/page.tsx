@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from "@/lib/constants";
 import { fetchUser, uploadMedia, mediaRef, resolveMediaUrl } from "@/lib/api";
 import { signAndPublishUserData, type ProfileField } from "@/lib/messages";
 import MobilePairingPanel from "@/components/MobilePairingPanel";
+import SignInFromMobilePanel from "@/components/SignInFromMobilePanel";
 import LogoutButton from "@/components/LogoutButton";
 import {
   createBackupPayload,
@@ -348,6 +349,7 @@ export default function SettingsPage() {
       </div>
 
       <MobilePairingPanel />
+      <SignInFromMobilePanel />
     </div>
     </ConnectionRequired>
   );
