@@ -34,7 +34,7 @@ export default function ProfileSidebar({
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [followingList, setFollowingList] = useState<
-    { following_tid: string; username: string | null }[]
+    { tid: string; username: string | null }[]
   >([]);
   const [karma, setKarma] = useState<KarmaSummary | null>(null);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
@@ -61,7 +61,7 @@ export default function ProfileSidebar({
 
       try {
         const data = await fetchFollowing(tid);
-        setFollowingList(data?.following ?? []);
+        setFollowingList(data?.users ?? []);
       } catch {
         // ignore
       }
@@ -82,7 +82,7 @@ export default function ProfileSidebar({
       .then((data) => {
         // Filter out self and already following
         const filtered = (data?.users ?? [])
-          .filter((u: any) => u.tid !== tid && !followingList.some(f => f.following_tid === u.tid))
+          .filter((u: any) => u.tid !== tid && !followingList.some(f => f.tid === u.tid))
           .slice(0, 3);
         setSuggestedUsers(filtered);
       })
@@ -227,12 +227,12 @@ export default function ProfileSidebar({
                           ? [
                               ...list,
                               {
-                                following_tid: String(u.tid),
+                                tid: String(u.tid),
                                 username: u.username ?? null,
                               },
                             ]
                           : list.filter(
-                              (f) => f.following_tid !== String(u.tid),
+                              (f) => f.tid !== String(u.tid),
                             ),
                       );
                     }}
@@ -256,18 +256,18 @@ export default function ProfileSidebar({
           <div className="mt-2 space-y-2">
             {followingList.slice(0, 10).map((f) => (
               <div
-                key={f.following_tid}
+                key={f.tid}
                 className="flex items-center gap-2 text-sm"
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-700">
                   {f.username
                     ? f.username[0].toUpperCase()
-                    : f.following_tid}
+                    : f.tid}
                 </div>
                 <span className="text-gray-700">
                   {f.username
                     ? `${f.username}.tribe`
-                    : `TID #${f.following_tid}`}
+                    : `TID #${f.tid}`}
                 </span>
               </div>
             ))}

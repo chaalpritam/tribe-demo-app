@@ -43,11 +43,11 @@ interface Tweet {
 }
 
 interface FollowEntry {
-  follower_tid?: string;
-  following_tid?: string;
+  tid: string;
   username: string | null;
   custody_address: string;
   pfp_url?: string | null;
+  profile?: { pfpUrl?: string | null } | null;
 }
 
 export default function ProfilePageWrapper() {
@@ -110,9 +110,9 @@ function ProfilePage() {
         if (feedData.status === "fulfilled")
           setTweets(feedData.value?.tweets ?? []);
         if (followersData.status === "fulfilled")
-          setFollowers(followersData.value?.followers ?? []);
+          setFollowers(followersData.value?.users ?? []);
         if (followingData.status === "fulfilled")
-          setFollowing(followingData.value?.following ?? []);
+          setFollowing(followingData.value?.users ?? []);
       } finally {
         setLoading(false);
       }
@@ -377,8 +377,8 @@ function ProfilePage() {
             ) : (
               followers.map((f) => (
                 <UserRow
-                  key={f.follower_tid}
-                  tid={f.follower_tid!}
+                  key={f.tid}
+                  tid={f.tid}
                   username={f.username}
                   address={f.custody_address}
                   pfpUrl={f.pfp_url || (f as any).profile?.pfpUrl || (f as any).profile?.pfp_url}
@@ -398,8 +398,8 @@ function ProfilePage() {
             ) : (
               following.map((f) => (
                 <UserRow
-                  key={f.following_tid}
-                  tid={f.following_tid!}
+                  key={f.tid}
+                  tid={f.tid}
                   username={f.username}
                   address={f.custody_address}
                   pfpUrl={f.pfp_url || (f as any).profile?.pfpUrl || (f as any).profile?.pfp_url}
