@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchUser, fetchFeed, fetchFollowers, fetchFollowing, fetchUserLikes, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -21,6 +21,8 @@ interface User {
   profile?: {
     bio?: string;
     displayName?: string;
+    pfpUrl?: string | null;
+    coverUrl?: string | null;
   };
 }
 
@@ -67,6 +69,7 @@ export default function ProfilePageWrapper() {
 function ProfilePage() {
   const { connected } = useWallet();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tidParam = searchParams.get("tid");
 
   const [user, setUser] = useState<User | null>(null);
@@ -175,63 +178,58 @@ function ProfilePage() {
   const initial = user?.username ? user.username[0].toUpperCase() : tidParam;
   const isMe = myTid === tid;
 
-  const resolvedPfp = (user?.pfp_url || (user?.profile as any)?.pfpUrl || (user?.profile as any)?.pfp_url) 
-    ? resolveMediaUrl(user?.pfp_url || (user?.profile as any)?.pfpUrl || (user?.profile as any)?.pfp_url) 
+  const resolvedPfp = (user?.pfp_url || user?.profile?.pfpUrl || (user?.profile as any)?.pfp_url)
+    ? resolveMediaUrl(user?.pfp_url || user?.profile?.pfpUrl || (user?.profile as any)?.pfp_url)
+    : null;
+
+  const resolvedCover = user?.profile?.coverUrl
+    ? resolveMediaUrl(user.profile.coverUrl)
     : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       {/* Profile header */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gray-900 text-3xl font-bold text-white shadow-inner ring-4 ring-white">
-              {resolvedPfp && !imgError ? (
-                <img
-                  src={resolvedPfp}
-                  alt={displayName}
-                  className="h-full w-full object-cover"
-                  onError={() => setImgError(true)}
-                />
-              ) : (
-                <span className="bg-gradient-to-br from-gray-700 to-gray-900 flex h-full w-full items-center justify-center">
-                  {initial}
-                </span>
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
-                {isMe && (
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                    You
-                  </span>
-                )}
-              </div>
-              {user?.custody_address && (
-                <div className="mt-1">
-                  <WalletAddress address={user.custody_address} />
-                </div>
-              )}
-              {user?.registered_at && (
-                <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  Joined{" "}
-                  {new Date(user.registered_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </p>
-              )}
-            </div>
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        {/* Cover banner */}
+        <div className="relative h-36 w-full overflow-hidden">
+          {resolvedCover ? (
+            <img src={resolvedCover} alt="Cover" className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900" />
+          )}
+          {isMe && (
+            <button
+              onClick={() => router.push("/settings")}
+              title="Edit cover photo"
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/70"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+              </svg>
+              Edit cover
+            </button>
+          )}
+        </div>
+
+        {/* Avatar + action buttons row — avatar overlaps the banner */}
+        <div className="-mt-12 flex items-end justify-between px-6 pb-0">
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-gray-900 text-3xl font-bold text-white shadow-inner ring-4 ring-white">
+            {resolvedPfp && !imgError ? (
+              <img
+                src={resolvedPfp}
+                alt={displayName}
+                className="h-full w-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
+                {initial}
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pb-2">
             {myTid && !isMe && (
               <>
                 <Link
@@ -247,11 +245,6 @@ function ProfilePage() {
                   myTid={myTid}
                   targetTid={tid}
                   onToggle={(nowFollowing) => {
-                    // Optimistically bump this profile's followers
-                    // count — the hub's social_graph row only lands
-                    // after L1 settlement (~10s + indexer lag), so
-                    // without this the displayed number doesn't move
-                    // on the user's screen until the next reload.
                     setUser((u) =>
                       u
                         ? {
@@ -281,28 +274,60 @@ function ProfilePage() {
           </div>
         </div>
 
-        {user?.profile?.bio && (
-          <p className="mt-6 text-base leading-relaxed text-gray-700">
-            {user.profile.bio}
-          </p>
-        )}
+        {/* Identity + bio + stats */}
+        <div className="px-6 pb-6 pt-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
+            {isMe && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                You
+              </span>
+            )}
+          </div>
+          {user?.custody_address && (
+            <div className="mt-1">
+              <WalletAddress address={user.custody_address} />
+            </div>
+          )}
+          {user?.registered_at && (
+            <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              Joined{" "}
+              {new Date(user.registered_at).toLocaleDateString("en-US", {
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          )}
 
-        <div className="mt-4 flex gap-6">
-          <div>
-            <p className="text-lg font-semibold text-gray-900">
-              {Number(user?.following_count ?? 0)}
+          {user?.profile?.bio && (
+            <p className="mt-4 text-base leading-relaxed text-gray-700">
+              {user.profile.bio}
             </p>
-            <p className="text-sm text-gray-500">Following</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-gray-900">
-              {Number(user?.followers_count ?? 0)}
-            </p>
-            <p className="text-sm text-gray-500">Followers</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-gray-900">{tweets.length}</p>
-            <p className="text-sm text-gray-500">Tweets</p>
+          )}
+
+          <div className="mt-4 flex gap-6">
+            <div>
+              <p className="text-lg font-semibold text-gray-900">
+                {Number(user?.following_count ?? 0)}
+              </p>
+              <p className="text-sm text-gray-500">Following</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-900">
+                {Number(user?.followers_count ?? 0)}
+              </p>
+              <p className="text-sm text-gray-500">Followers</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-900">{tweets.length}</p>
+              <p className="text-sm text-gray-500">Tweets</p>
+            </div>
           </div>
         </div>
       </div>

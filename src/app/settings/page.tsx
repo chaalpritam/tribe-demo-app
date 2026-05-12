@@ -20,6 +20,7 @@ interface ProfileForm {
   displayName: string;
   bio: string;
   pfpUrl: string;
+  coverUrl: string;
   url: string;
   location: string;
   city: string;
@@ -29,6 +30,7 @@ const EMPTY_FORM: ProfileForm = {
   displayName: "",
   bio: "",
   pfpUrl: "",
+  coverUrl: "",
   url: "",
   location: "",
   city: "",
@@ -51,6 +53,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   
   const [backupPassword, setBackupPassword] = useState("");
@@ -76,6 +79,7 @@ export default function SettingsPage() {
           displayName: p.displayName ?? "",
           bio: p.bio ?? "",
           pfpUrl: p.pfpUrl ?? "",
+          coverUrl: p.coverUrl ?? "",
           url: p.url ?? "",
           location: p.location ?? "",
           city: p.city ?? "",
@@ -95,13 +99,28 @@ export default function SettingsPage() {
       setUploading(true);
       try {
         const result = await uploadMedia(file);
-        // Store the canonical reference, not the absolute URL — see
-        // mediaRef in lib/api for the rationale (hub IP change safety).
         setForm((f) => ({ ...f, pfpUrl: mediaRef(result.hash) }));
       } catch {
         setMessage("Failed to upload avatar");
       } finally {
         setUploading(false);
+      }
+    },
+    []
+  );
+
+  const handleCoverUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setUploadingCover(true);
+      try {
+        const result = await uploadMedia(file);
+        setForm((f) => ({ ...f, coverUrl: mediaRef(result.hash) }));
+      } catch {
+        setMessage("Failed to upload cover photo");
+      } finally {
+        setUploadingCover(false);
       }
     },
     []
@@ -122,6 +141,7 @@ export default function SettingsPage() {
       "displayName",
       "bio",
       "pfpUrl",
+      "coverUrl",
       "url",
       "location",
       "city",
@@ -199,9 +219,54 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
 
       <div className="mt-6 space-y-4">
+        {/* Cover photo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Cover photo
+          </label>
+          <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+            {form.coverUrl ? (
+              <img
+                src={resolveMediaUrl(form.coverUrl) ?? ""}
+                alt="Cover"
+                className="h-36 w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 20.25h18A.75.75 0 0021.75 19.5v-15A.75.75 0 0021 3.75H3A.75.75 0 002.25 4.5v15c0 .414.336.75.75.75z" />
+                </svg>
+              </div>
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <label className="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
+              {uploadingCover ? "Uploading..." : "Upload image"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+              />
+            </label>
+            {form.coverUrl && (
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, coverUrl: "" }))}
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-400">
+            Recommended: 1500 × 500 px. PNG, JPG, or GIF.
+          </p>
+        </div>
+
         {/* Avatar */}
         <div>
-          <label className="block text-sm font-medium text-gray-300">
+          <label className="block text-sm font-medium text-gray-700">
             Avatar
           </label>
           <div className="mt-2 flex items-center gap-4">
@@ -216,7 +281,7 @@ export default function SettingsPage() {
                 {myTid}
               </div>
             )}
-            <label className="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
+            <label className="cursor-pointer rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
               {uploading ? "Uploading..." : "Change avatar"}
               <input
                 type="file"

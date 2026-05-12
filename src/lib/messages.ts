@@ -466,6 +466,7 @@ export type ProfileField =
   | "displayName"
   | "bio"
   | "pfpUrl"
+  | "coverUrl"
   | "url"
   | "location"
   | "city";
