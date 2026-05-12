@@ -459,8 +459,8 @@ export async function signAndRetweet(args: {
  * The hub keeps a per-tid history in user_data and exposes the
  * latest-per-field on /v1/user/:tid as `profile`.
  *
- * Allowed fields (enforced by hub): displayName, bio, pfpUrl, url,
- * location, city. Max value length: 500 chars.
+ * Allowed fields (enforced by hub): displayName, bio, pfpUrl, coverUrl,
+ * url, location, city. Max value length: 500 chars.
  */
 export type ProfileField =
   | "displayName"
