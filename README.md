@@ -6,34 +6,34 @@ Next.js frontend for the Tribe protocol. Connects to Solana for on-chain identit
 
 <table>
   <tr>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.03 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.11 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.21 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.25 PM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.03%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.11%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.21%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.25%E2%80%AFPM.png" width="320"/></td>
   </tr>
   <tr>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.30 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.39 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.43 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.48 PM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.30%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.39%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.43%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.48%E2%80%AFPM.png" width="320"/></td>
   </tr>
   <tr>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.52 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.19.58 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.20.08 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.20.14 PM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.52%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.19.58%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.20.08%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.20.14%E2%80%AFPM.png" width="320"/></td>
   </tr>
   <tr>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.20.34 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.20.40 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.21.06 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.21.30 PM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.20.34%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.20.40%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.21.06%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.21.30%E2%80%AFPM.png" width="320"/></td>
   </tr>
   <tr>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.21.44 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.21.52 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.21.58 PM.png" width="320"/></td>
-    <td><img src="cover/Screenshot 2026-05-12 at 12.22.09 PM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.21.44%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.21.52%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.21.58%E2%80%AFPM.png" width="320"/></td>
+    <td><img src="cover/Screenshot 2026-05-12 at 12.22.09%E2%80%AFPM.png" width="320"/></td>
   </tr>
 </table>
 
