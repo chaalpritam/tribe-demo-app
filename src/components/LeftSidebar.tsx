@@ -65,6 +65,26 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/reels",
+    label: "Reels",
+    icon: (active) => (
+      <svg
+        viewBox="0 0 24 24"
+        fill={active ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={active ? 0 : 1.8}
+        className="h-6 w-6"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <path
+          d="M10 8.5v7l6-3.5-6-3.5z"
+          fill={active ? "white" : "currentColor"}
+          stroke="none"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "/notifications",
     label: "Notifications",
     badgeKey: "notifications",
