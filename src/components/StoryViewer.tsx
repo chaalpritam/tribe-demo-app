@@ -1,23 +1,39 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveMediaUrl, Story } from "@/lib/api";
 import { signAndViewStory } from "@/lib/messages";
 import { STORAGE_KEYS } from "@/lib/constants";
 
-/// Full-screen story viewer modal. Single-author for Phase 3 (matches
-/// the iOS client); Phase 4 adds horizontal swipe between authors.
+/// Full-screen story viewer modal with multi-author swipe + auto-advance.
 ///
-/// - Progress bars at the top showing position within the author's stories
-/// - Click left/right halves of the image to navigate
-/// - Arrow keys: left/right step, Escape closes
-/// - On each story display, fires STORY_VIEW envelope. Idempotent
-///   on the hub so re-scrubbing doesn't spam.
+/// Props:
+/// - `authors`: each entry is one author's stories in chronological order.
+/// - `initialAuthorIndex`: which author the viewer opens at.
+///
+/// Navigation:
+/// - Click left/right halves: prev / next story; at the edges, jumps to
+///   prev / next author.
+/// - Arrow keys: same.
+/// - Escape: dismiss.
+/// - Pointer down: pauses the auto-advance timer until pointer up.
+///
+/// Auto-advance: 5s per story. Pauses on mousedown / touchstart, resumes
+/// on mouseup / touchend. Re-fires STORY_VIEW on first display of each
+/// story per session (Set dedupe + hub-side idempotency).
 interface StoryViewerProps {
-  stories: Story[];
+  /** Single-author legacy shape — kept for the home page's
+   *  pre-grouping path. Maps internally to a one-element authors[]. */
+  stories?: Story[];
+  /** Multi-author shape — preferred. */
+  authors?: Story[][];
+  initialAuthorIndex?: number;
   myTid?: number;
   onClose: () => void;
 }
+
+const STORY_DURATION_MS = 5000;
+const TICK_MS = 50;
 
 function loadAppKey(): Uint8Array | null {
   const stored = localStorage.getItem(STORAGE_KEYS.appKeySecret);
@@ -25,46 +41,117 @@ function loadAppKey(): Uint8Array | null {
   return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
 }
 
-export default function StoryViewer({ stories, myTid, onClose }: StoryViewerProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [viewedHashes] = useState(() => new Set<string>());
+export default function StoryViewer({
+  stories,
+  authors: authorsProp,
+  initialAuthorIndex = 0,
+  myTid,
+  onClose,
+}: StoryViewerProps) {
+  // Normalize to the multi-author shape internally.
+  const authors = useMemo<Story[][]>(() => {
+    if (authorsProp && authorsProp.length > 0) return authorsProp;
+    if (stories && stories.length > 0) return [stories];
+    return [];
+  }, [authorsProp, stories]);
 
-  const current = stories[currentIndex];
+  const [authorIndex, setAuthorIndex] = useState(initialAuthorIndex);
+  const [storyIndex, setStoryIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const pausedRef = useRef(false);
+  const [, forceRender] = useState(0);
+  const seenHashesRef = useRef<Set<string>>(new Set());
+
+  const currentAuthorStories = authors[authorIndex] ?? [];
+  const current = currentAuthorStories[storyIndex];
+
+  // Reset progress + story index whenever the author changes.
+  useEffect(() => {
+    setStoryIndex(0);
+    setProgress(0);
+  }, [authorIndex]);
+
+  useEffect(() => {
+    setProgress(0);
+  }, [storyIndex]);
 
   const goForward = useCallback(() => {
-    setCurrentIndex((i) => {
-      if (i + 1 < stories.length) return i + 1;
-      onClose();
+    setStoryIndex((i) => {
+      if (i + 1 < currentAuthorStories.length) return i + 1;
+      // End of this author — advance to next or close.
+      setAuthorIndex((a) => {
+        if (a + 1 < authors.length) return a + 1;
+        onClose();
+        return a;
+      });
       return i;
     });
-  }, [onClose, stories.length]);
+  }, [authors.length, currentAuthorStories.length, onClose]);
 
   const goBack = useCallback(() => {
-    setCurrentIndex((i) => {
+    setStoryIndex((i) => {
       if (i > 0) return i - 1;
-      onClose();
+      // Start of this author — jump to the LAST story of the previous
+      // author (IG behavior).
+      setAuthorIndex((a) => {
+        if (a > 0) {
+          const prev = authors[a - 1] ?? [];
+          setStoryIndex(Math.max(0, prev.length - 1));
+          return a - 1;
+        }
+        onClose();
+        return a;
+      });
       return i;
     });
-  }, [onClose]);
+  }, [authors, onClose]);
 
-  // Keyboard navigation
+  const nextAuthor = useCallback(() => {
+    setAuthorIndex((a) => (a + 1 < authors.length ? a + 1 : a));
+  }, [authors.length]);
+
+  const prevAuthor = useCallback(() => {
+    setAuthorIndex((a) => (a > 0 ? a - 1 : a));
+  }, []);
+
+  // Keyboard navigation.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") goForward();
       else if (e.key === "ArrowLeft") goBack();
-      else if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.key === "ArrowDown" ? nextAuthor() : prevAuthor();
+      } else if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [goForward, goBack, onClose]);
+  }, [goForward, goBack, nextAuthor, prevAuthor, onClose]);
 
-  // Fire STORY_VIEW on first display of each story in this session.
-  // Re-scrubs are a no-op locally (the Set dedupes) AND on the hub
-  // (idempotent upsert).
+  // Auto-advance timer.
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (pausedRef.current) return;
+      setProgress((p) => {
+        const next = p + TICK_MS / STORY_DURATION_MS;
+        if (next >= 1) {
+          // Defer goForward so we don't update sibling state mid-render.
+          queueMicrotask(() => goForward());
+          return 0;
+        }
+        return next;
+      });
+      // Force a re-render so progress bar updates even when setProgress's
+      // return value optimizes the bail-out.
+      forceRender((n) => n + 1);
+    }, TICK_MS);
+    return () => clearInterval(t);
+  }, [goForward]);
+
+  // Fire STORY_VIEW on first display of each story this session.
   useEffect(() => {
     if (!current || !myTid) return;
-    if (viewedHashes.has(current.hash)) return;
-    viewedHashes.add(current.hash);
+    if (seenHashesRef.current.has(current.hash)) return;
+    seenHashesRef.current.add(current.hash);
     const key = loadAppKey();
     if (!key) return;
     signAndViewStory({
@@ -72,48 +159,77 @@ export default function StoryViewer({ stories, myTid, onClose }: StoryViewerProp
       storyHash: current.hash,
       signingKeySecret: key,
     }).catch(() => {
-      // Soft-fail — leaving the dedupe in place is fine; the user
-      // doesn't see anything wrong, and the hub-side view count just
-      // misses one.
+      /* Soft-fail. */
     });
-  }, [current, myTid, viewedHashes]);
+  }, [current, myTid]);
 
   const mediaUrl = useMemo(
     () => (current ? resolveMediaUrl(`media:${current.media_hash}`) : null),
     [current]
   );
 
-  if (!current) return null;
+  if (!current) {
+    // Empty state — should be rare, but safe to render rather than
+    // crash if authors[][] turns out empty.
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black text-white"
+        onClick={onClose}
+      >
+        No stories.
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      {/* Progress bars across the top */}
-      <div className="absolute left-4 right-4 top-3 flex gap-1">
-        {stories.map((_, idx) => (
-          <div
-            key={idx}
-            className={`h-0.5 flex-1 rounded-full ${
-              idx <= currentIndex ? "bg-white" : "bg-white/30"
-            }`}
-          />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      onMouseDown={() => { pausedRef.current = true; }}
+      onMouseUp={() => { pausedRef.current = false; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      onTouchStart={() => { pausedRef.current = true; }}
+      onTouchEnd={() => { pausedRef.current = false; }}
+    >
+      {/* Progress bars across the top — one per story for the current
+          author. Filled fully for past stories, partial for current. */}
+      <div className="absolute left-4 right-4 top-3 z-10 flex gap-1">
+        {currentAuthorStories.map((_, idx) => (
+          <div key={idx} className="relative h-0.5 flex-1 overflow-hidden rounded-full bg-white/30">
+            <div
+              className="h-full bg-white"
+              style={{
+                width:
+                  idx < storyIndex ? "100%" :
+                  idx === storyIndex ? `${progress * 100}%` :
+                  "0%",
+              }}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Header: author + close */}
-      <div className="absolute left-4 right-4 top-8 flex items-center gap-3 text-white">
+      {/* Header */}
+      <div className="absolute left-4 right-4 top-8 z-10 flex items-center gap-3 text-white">
         <span className="text-sm font-semibold">
           {current.username ?? `tid${current.author_tid}`}
         </span>
         <span className="text-xs opacity-70">
           {relativeTime(current.created_at)}
         </span>
-        <button
-          onClick={onClose}
-          className="ml-auto p-1 text-white/80 hover:text-white"
-          aria-label="Close"
-        >
-          ✕
-        </button>
+        <span className="ml-auto flex items-center gap-3">
+          {authors.length > 1 && (
+            <span className="text-xs opacity-70">
+              {authorIndex + 1} / {authors.length}
+            </span>
+          )}
+          <button
+            onClick={onClose}
+            className="p-1 text-white/80 hover:text-white"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </span>
       </div>
 
       {/* Image */}
@@ -128,7 +244,7 @@ export default function StoryViewer({ stories, myTid, onClose }: StoryViewerProp
 
       {/* Caption */}
       {current.caption && (
-        <div className="absolute bottom-12 left-0 right-0 flex justify-center px-6">
+        <div className="absolute bottom-12 left-0 right-0 z-10 flex justify-center px-6">
           <span className="rounded-full bg-black/50 px-4 py-2 text-sm text-white">
             {current.caption}
           </span>
@@ -138,12 +254,12 @@ export default function StoryViewer({ stories, myTid, onClose }: StoryViewerProp
       {/* Tap zones — left = back, right = forward */}
       <button
         onClick={goBack}
-        className="absolute bottom-0 left-0 top-12 w-1/2 cursor-default"
+        className="absolute bottom-0 left-0 top-12 z-0 w-1/2 cursor-default"
         aria-label="Previous story"
       />
       <button
         onClick={goForward}
-        className="absolute bottom-0 right-0 top-12 w-1/2 cursor-default"
+        className="absolute bottom-0 right-0 top-12 z-0 w-1/2 cursor-default"
         aria-label="Next story"
       />
     </div>
