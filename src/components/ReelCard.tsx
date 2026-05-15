@@ -117,10 +117,9 @@ export default function ReelCard({
         {/* LikeButton handles REACTION_ADD/REACTION_REMOVE against
             the reel's hash. Reels are TWEET_ADD rows in the same
             messages table as tweets — the existing /v1/reactions
-            endpoint accepts the hash unchanged. */}
-        <div className="reel-like text-white [&_svg]:h-7 [&_svg]:w-7 [&_button]:!text-white">
-          <LikeButton tweetHash={hash} tid={tid} />
-        </div>
+            endpoint accepts the hash unchanged. variant="reels"
+            switches to the big white-on-dark icon with count below. */}
+        <LikeButton tweetHash={hash} tid={tid} variant="reels" />
 
         <Link
           href={`/tweet?hash=${encodeURIComponent(hash)}`}
