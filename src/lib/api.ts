@@ -695,3 +695,66 @@ export async function fetchFollowing(tid: string) {
   if (!res.ok) throw new Error(`Failed to fetch following: ${res.statusText}`);
   return res.json();
 }
+
+// MARK: - Phase 3 (stories + reels)
+
+export interface Story {
+  hash: string;
+  author_tid: string;
+  media_hash: string;
+  caption: string | null;
+  music: string | null;
+  created_at: string;
+  expires_at: string;
+  username?: string | null;
+  pfp_url?: string | null;
+}
+
+export interface StoryViewer {
+  viewer_tid: string;
+  viewed_at: string;
+  username?: string | null;
+  pfp_url?: string | null;
+}
+
+/** Active stories across all authors (24h TTL). Phase 4 may add a
+ *  follow-graph filter — for now everyone's stories surface. */
+export async function fetchStories(limit = 100): Promise<{ stories: Story[] }> {
+  const res = await hubFetch(`/v1/stories?limit=${limit}`);
+  if (!res.ok) throw new Error(`Failed to fetch stories: ${res.statusText}`);
+  return res.json();
+}
+
+/** One author's currently-active stories, oldest-first. */
+export async function fetchUserStories(tid: string | number): Promise<{ stories: Story[] }> {
+  const res = await hubFetch(`/v1/stories/${tid}`);
+  if (!res.ok) throw new Error(`Failed to fetch user stories: ${res.statusText}`);
+  return res.json();
+}
+
+/** "Seen by" list. Pass viewerTid to self-gate — non-author requests
+ *  get a 403 from the hub. */
+export async function fetchStoryViewers(
+  storyHash: string,
+  viewerTid?: string | number
+): Promise<{ viewers: StoryViewer[] }> {
+  const params = new URLSearchParams();
+  if (viewerTid !== undefined) params.set("viewer_tid", String(viewerTid));
+  const url = `/v1/stories/${encodeURIComponent(storyHash)}/viewers?${params}`;
+  const res = await hubFetch(url);
+  if (res.status === 403) {
+    throw new Error("Only the story's author can see the viewer list");
+  }
+  if (!res.ok) throw new Error(`Failed to fetch story viewers: ${res.statusText}`);
+  return res.json();
+}
+
+/** Paginated reels feed (TWEET_ADD rows with post_kind='reel'). */
+export async function fetchReels(opts: { limit?: number; cursor?: string } = {}) {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const res = await hubFetch(`/v1/reels?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch reels: ${res.statusText}`);
+  return res.json();
+}
