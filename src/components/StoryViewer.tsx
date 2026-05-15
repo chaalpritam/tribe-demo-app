@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { resolveMediaUrl, Story } from "@/lib/api";
-import { signAndViewStory } from "@/lib/messages";
+import { resolveMediaUrl, getDmKey, Story } from "@/lib/api";
+import {
+  signAndViewStory,
+  signAndSendDm,
+  signAndRegisterDmKey,
+} from "@/lib/messages";
+import { encryptMessage, getDmPublicKey } from "@/lib/crypto";
 import { STORAGE_KEYS } from "@/lib/constants";
 import StoryViewersModal from "./StoryViewersModal";
 
@@ -60,6 +65,11 @@ export default function StoryViewer({
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showViewers, setShowViewers] = useState(false);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const [replySent, setReplySent] = useState(false);
+  const [replyFocused, setReplyFocused] = useState(false);
   const pausedRef = useRef(false);
   const [, forceRender] = useState(0);
   const seenHashesRef = useRef<Set<string>>(new Set());
@@ -170,6 +180,66 @@ export default function StoryViewer({
     [current]
   );
 
+  /// Encrypt + send a DM reply to the story's author. Mirrors the iOS
+  /// TribeService.replyToStory shape: plaintext JSON carries the
+  /// story_hash so a future inbox can anchor the reply.
+  const handleReplySend = useCallback(
+    async (story: Story) => {
+      const text = replyDraft.trim();
+      if (!text || myTid === undefined) return;
+
+      const key = loadAppKey();
+      if (!key) {
+        setReplyError("No app key — sign in first.");
+        return;
+      }
+
+      setIsReplying(true);
+      setReplyError(null);
+      try {
+        // Make sure the recipient knows where to reach us back. The
+        // hub is idempotent on the (tid, x25519_pubkey) key, so
+        // re-registering on every reply is cheap.
+        const myPub = getDmPublicKey(myTid);
+        try {
+          await signAndRegisterDmKey(myTid, myPub, key);
+        } catch {
+          /* non-fatal — recipient still gets our key via sender_x25519 */
+        }
+
+        const recipientPub = await getDmKey(String(story.author_tid));
+        if (!recipientPub) {
+          setReplyError("This user hasn't set up DMs on the hub yet.");
+          return;
+        }
+
+        const plaintext = JSON.stringify({ text, story_hash: story.hash });
+        const { encrypted, nonce } = encryptMessage(
+          plaintext,
+          recipientPub,
+          myTid
+        );
+
+        await signAndSendDm({
+          senderTid: myTid,
+          recipientTid: Number(story.author_tid),
+          ciphertext: encrypted,
+          nonce,
+          senderX25519: myPub,
+          signingKeySecret: key,
+        });
+
+        setReplyDraft("");
+        setReplySent(true);
+      } catch (e) {
+        setReplyError(e instanceof Error ? e.message : "Send failed");
+      } finally {
+        setIsReplying(false);
+      }
+    },
+    [replyDraft, myTid]
+  );
+
   if (!current) {
     // Empty state — should be rare, but safe to render rather than
     // crash if authors[][] turns out empty.
@@ -272,6 +342,50 @@ export default function StoryViewer({
           myTid={myTid}
           onClose={() => setShowViewers(false)}
         />
+      )}
+
+      {/* DM reply composer — non-own stories only, signed-in only. The
+          ticker keeps running while the user types (we don't have an
+          easy hook to pause it that survives input focus), but it's
+          short enough the impact is small. */}
+      {myTid !== undefined && Number(current.author_tid) !== myTid && (
+        <form
+          className="absolute bottom-3 left-1/2 z-20 flex w-[min(420px,90vw)] -translate-x-1/2 flex-col gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleReplySend(current);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-2 backdrop-blur-sm">
+            <input
+              type="text"
+              value={replyDraft}
+              onChange={(e) => {
+                setReplyDraft(e.target.value);
+                if (replySent) setReplySent(false);
+              }}
+              onFocus={() => { setReplyFocused(true); pausedRef.current = true; }}
+              onBlur={() => { setReplyFocused(false); pausedRef.current = false; }}
+              placeholder={replySent ? "Sent. Send another?" : "Reply to story"}
+              className="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/60 focus:outline-none"
+            />
+            {isReplying ? (
+              <span className="px-2 text-xs text-white/80">…</span>
+            ) : replyDraft.trim().length > 0 ? (
+              <button
+                type="submit"
+                aria-label="Send reply"
+                className="p-2 text-white hover:opacity-80"
+              >
+                ➤
+              </button>
+            ) : null}
+          </div>
+          {replyError && (
+            <span className="px-3 text-xs text-red-300">{replyError}</span>
+          )}
+        </form>
       )}
 
       {/* Tap zones — left = back, right = forward */}
