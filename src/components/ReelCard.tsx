@@ -23,6 +23,8 @@ interface ReelCardProps {
   pfpUrl: string | null;
   audioTitle: string | null;
   replyCount: number;
+  /** Phase 6: server-side reaction aggregate from /v1/reels. */
+  reactionCount?: number;
   myTid?: number;
 }
 
@@ -36,6 +38,7 @@ export default function ReelCard({
   pfpUrl,
   audioTitle,
   replyCount,
+  reactionCount,
   myTid,
 }: ReelCardProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -119,7 +122,12 @@ export default function ReelCard({
             messages table as tweets — the existing /v1/reactions
             endpoint accepts the hash unchanged. variant="reels"
             switches to the big white-on-dark icon with count below. */}
-        <LikeButton tweetHash={hash} tid={tid} variant="reels" />
+        <LikeButton
+          tweetHash={hash}
+          tid={tid}
+          variant="reels"
+          initialCount={reactionCount}
+        />
 
         <Link
           href={`/tweet?hash=${encodeURIComponent(hash)}`}

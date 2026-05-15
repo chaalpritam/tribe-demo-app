@@ -18,6 +18,7 @@ interface ReelRow {
   pfp_url?: string | null;
   audio_title?: string | null;
   reply_count?: number;
+  reaction_count?: number;
 }
 
 /// Vertical-snap reels feed. snap-y + snap-mandatory on the scroll
@@ -113,6 +114,7 @@ export default function ReelsPage() {
             pfpUrl={reel.pfp_url ?? null}
             audioTitle={reel.audio_title ?? null}
             replyCount={reel.reply_count ?? 0}
+            reactionCount={reel.reaction_count}
             myTid={myTid ?? undefined}
           />
         );

@@ -16,6 +16,9 @@ interface Tweet {
   display_name?: string | null;
   pfp_url?: string | null;
   reply_count?: number;
+  /** Phase 6: server-side reaction aggregate from /v1/feed. */
+  reaction_count?: number;
+  bookmark_count?: number;
   embeds?: string[];
 }
 
@@ -133,6 +136,7 @@ export default function Feed({ tid, myTid, refreshKey }: FeedProps) {
             pfpUrl={tweet.pfp_url ?? undefined}
             myTid={myTid}
             replyCount={tweet.reply_count}
+            reactionCount={tweet.reaction_count}
             embeds={tweet.embeds}
           />
         );
