@@ -32,7 +32,7 @@ export default function StoriesBar({
 
   useEffect(() => {
     let cancelled = false;
-    fetchStories(100)
+    fetchStories(100, myTid)
       .then((res) => {
         if (cancelled) return;
         // /v1/stories already returns rows grouped by author + newest

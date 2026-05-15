@@ -717,10 +717,16 @@ export interface StoryViewer {
   pfp_url?: string | null;
 }
 
-/** Active stories across all authors (24h TTL). Phase 4 may add a
- *  follow-graph filter — for now everyone's stories surface. */
-export async function fetchStories(limit = 100): Promise<{ stories: Story[] }> {
-  const res = await hubFetch(`/v1/stories?limit=${limit}`);
+/** Active stories. When `viewerTid` is passed the hub filters to
+ *  stories from authors the viewer follows + the viewer's own;
+ *  omit it to see everyone (useful for landing / signed-out renders). */
+export async function fetchStories(
+  limit = 100,
+  viewerTid?: string | number
+): Promise<{ stories: Story[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (viewerTid !== undefined) params.set("viewer_tid", String(viewerTid));
+  const res = await hubFetch(`/v1/stories?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch stories: ${res.statusText}`);
   return res.json();
 }
