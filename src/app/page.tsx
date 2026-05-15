@@ -10,9 +10,13 @@ import { BROWSER_WALLET_NAME } from "@/lib/browser-wallet/adapter";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
+import StoriesBar from "@/components/StoriesBar";
+import StoryViewer from "@/components/StoryViewer";
 import RegisterIdentity from "@/components/RegisterIdentity";
 import ImportBackup from "@/components/ImportBackup";
 import BackupReminder from "@/components/BackupReminder";
+import type { Story } from "@/lib/api";
+import { fetchUserStories } from "@/lib/api";
 
 import WalletButton from "@/components/WalletButton";
 
@@ -26,6 +30,7 @@ export default function Home() {
   const [showSetup, setShowSetup] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [reconnectFailed, setReconnectFailed] = useState(false);
+  const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
   const connectAttempted = useRef(false);
 
   // Hydrate cached session from localStorage after mount. Doing this
@@ -202,6 +207,23 @@ export default function Home() {
               </div>
             )
           )}
+          <StoriesBar
+            myTid={tid ?? undefined}
+            refreshKey={refreshKey}
+            onStoryClick={(_authorTid, stories) => setViewerStories(stories)}
+            onYourStoryClick={async () => {
+              // Open my own stories oldest-first when the user taps
+              // "Your story". When there's nothing to show the viewer
+              // dismisses immediately rather than flashing empty state.
+              if (tid === null) return;
+              try {
+                const r = await fetchUserStories(tid);
+                if (r.stories.length > 0) setViewerStories(r.stories);
+              } catch {
+                /* soft-fail */
+              }
+            }}
+          />
           <Feed myTid={tid ?? undefined} refreshKey={refreshKey} />
         </div>
       </div>
@@ -224,6 +246,14 @@ export default function Home() {
           )}
         </div>
       </aside>
+
+      {viewerStories && (
+        <StoryViewer
+          stories={viewerStories}
+          myTid={tid ?? undefined}
+          onClose={() => setViewerStories(null)}
+        />
+      )}
 
       {showSetup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
