@@ -42,7 +42,11 @@ export async function signAndPublishTweet(
   signingKeySecret: Uint8Array,
   parentHash?: string,
   channelId?: string,
-  embeds?: string[]
+  embeds?: string[],
+  /** Phase 3: 'photo' / 'reel' discriminator. nil for plain tweets. */
+  postKind?: "photo" | "reel",
+  location?: string,
+  audioTitle?: string
 ): Promise<{ hash: string }> {
   const timestamp = Math.floor(Date.now() / 1000);
 
@@ -58,6 +62,9 @@ export async function signAndPublishTweet(
     channel_id: resolvedChannelId,
   };
   if (parentHash) body.parent_hash = parentHash;
+  if (postKind) body.post_kind = postKind;
+  if (location) body.location = location;
+  if (audioTitle) body.audio_title = audioTitle;
 
   const data = {
     type: 1, // TWEET_ADD
@@ -1034,4 +1041,52 @@ export async function signAndMarkRead(args: {
     throw new Error(`DM read mark failed: ${res.status} ${err}`);
   }
   return res.json();
+}
+
+/**
+ * Phase 3 — publish a STORY_ADD envelope (type 33). The hub stamps
+ * `expires_at = created_at + 24h` server-side so clients can't lie
+ * about TTL, and the hourly stories-cleanup cron purges expired rows
+ * (cascading their story_views).
+ *
+ * `mediaHash` is the 64-char hex SHA-256 returned by /v1/upload —
+ * passed bare, not wrapped in "media:" (stories key off a dedicated
+ * column rather than an embeds array).
+ */
+export async function signAndPublishStory(args: {
+  tid: number;
+  mediaHash: string;
+  caption?: string;
+  music?: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  const body: Record<string, unknown> = { media_hash: args.mediaHash };
+  if (args.caption) body.caption = args.caption;
+  if (args.music) body.music = args.music;
+  return submitTypedEnvelope({
+    type: 33,
+    tid: args.tid,
+    body,
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Story publish",
+  });
+}
+
+/**
+ * Phase 3 — mark a story as viewed (STORY_VIEW = 34). Idempotent at
+ * the hub: subsequent calls with the same (story_hash, viewer_tid)
+ * keep the original viewed_at timestamp.
+ */
+export async function signAndViewStory(args: {
+  tid: number;
+  storyHash: string;
+  signingKeySecret: Uint8Array;
+}): Promise<{ hash: string }> {
+  return submitTypedEnvelope({
+    type: 34,
+    tid: args.tid,
+    body: { story_hash: args.storyHash },
+    signingKeySecret: args.signingKeySecret,
+    errorLabel: "Story view",
+  });
 }
