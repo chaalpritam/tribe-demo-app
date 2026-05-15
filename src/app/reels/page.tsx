@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchReels, resolveMediaUrl } from "@/lib/api";
 import { STORAGE_KEYS } from "@/lib/constants";
 import ReelCard from "@/components/ReelCard";
+import MediaComposer from "@/components/MediaComposer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import EmptyState from "@/components/EmptyState";
 
@@ -28,16 +29,22 @@ export default function ReelsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [myTid, setMyTid] = useState<number | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
 
-  useEffect(() => {
-    const cached = localStorage.getItem(STORAGE_KEYS.tid);
-    if (cached) setMyTid(parseInt(cached, 10));
+  const load = useCallback(() => {
     setError(null);
+    setLoading(true);
     fetchReels({ limit: 20 })
       .then((res) => setReels(Array.isArray(res?.reels) ? res.reels : []))
       .catch(() => setError("Failed to load reels"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const cached = localStorage.getItem(STORAGE_KEYS.tid);
+    if (cached) setMyTid(parseInt(cached, 10));
+    load();
+  }, [load]);
 
   if (loading) {
     return (
@@ -70,7 +77,26 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className="h-screen snap-y snap-mandatory overflow-y-scroll bg-black">
+    <div className="relative h-screen snap-y snap-mandatory overflow-y-scroll bg-black">
+      {myTid !== null && (
+        <button
+          onClick={() => setShowComposer(true)}
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white text-3xl font-bold text-black shadow-lg hover:bg-gray-100"
+          aria-label="New reel"
+        >
+          +
+        </button>
+      )}
+
+      {showComposer && myTid !== null && (
+        <MediaComposer
+          mode="reel"
+          tid={myTid}
+          onClose={() => setShowComposer(false)}
+          onPublished={load}
+        />
+      )}
+
       {reels.map((reel, idx) => {
         const firstEmbed = (reel.embeds ?? []).find((e) => !!e);
         const videoUrl = resolveMediaUrl(firstEmbed ?? null);

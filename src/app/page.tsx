@@ -12,6 +12,7 @@ import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
 import StoriesBar from "@/components/StoriesBar";
 import StoryViewer from "@/components/StoryViewer";
+import MediaComposer from "@/components/MediaComposer";
 import RegisterIdentity from "@/components/RegisterIdentity";
 import ImportBackup from "@/components/ImportBackup";
 import BackupReminder from "@/components/BackupReminder";
@@ -31,6 +32,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [reconnectFailed, setReconnectFailed] = useState(false);
   const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
+  const [showStoryComposer, setShowStoryComposer] = useState(false);
   const connectAttempted = useRef(false);
 
   // Hydrate cached session from localStorage after mount. Doing this
@@ -212,15 +214,20 @@ export default function Home() {
             refreshKey={refreshKey}
             onStoryClick={(_authorTid, stories) => setViewerStories(stories)}
             onYourStoryClick={async () => {
-              // Open my own stories oldest-first when the user taps
-              // "Your story". When there's nothing to show the viewer
-              // dismisses immediately rather than flashing empty state.
+              // "Your story" tap — if I have an active story, open
+              // the viewer; otherwise drop straight into the composer.
+              // That matches IG's behavior (avatar with a + glyph on
+              // the bar always lets you post a new one).
               if (tid === null) return;
               try {
                 const r = await fetchUserStories(tid);
-                if (r.stories.length > 0) setViewerStories(r.stories);
+                if (r.stories.length > 0) {
+                  setViewerStories(r.stories);
+                } else {
+                  setShowStoryComposer(true);
+                }
               } catch {
-                /* soft-fail */
+                setShowStoryComposer(true);
               }
             }}
           />
@@ -252,6 +259,15 @@ export default function Home() {
           stories={viewerStories}
           myTid={tid ?? undefined}
           onClose={() => setViewerStories(null)}
+        />
+      )}
+
+      {showStoryComposer && tid !== null && (
+        <MediaComposer
+          mode="story"
+          tid={tid}
+          onClose={() => setShowStoryComposer(false)}
+          onPublished={() => setRefreshKey((k) => k + 1)}
         />
       )}
 
