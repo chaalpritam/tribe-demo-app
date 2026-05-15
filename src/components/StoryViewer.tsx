@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveMediaUrl, Story } from "@/lib/api";
 import { signAndViewStory } from "@/lib/messages";
 import { STORAGE_KEYS } from "@/lib/constants";
+import StoryViewersModal from "./StoryViewersModal";
 
 /// Full-screen story viewer modal with multi-author swipe + auto-advance.
 ///
@@ -58,6 +59,7 @@ export default function StoryViewer({
   const [authorIndex, setAuthorIndex] = useState(initialAuthorIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showViewers, setShowViewers] = useState(false);
   const pausedRef = useRef(false);
   const [, forceRender] = useState(0);
   const seenHashesRef = useRef<Set<string>>(new Set());
@@ -249,6 +251,27 @@ export default function StoryViewer({
             {current.caption}
           </span>
         </div>
+      )}
+
+      {/* Author-only "Seen by" footer. Sits on top of the right tap zone
+          (z-20 vs z-0) so the click lands here instead of advancing. */}
+      {myTid !== undefined && Number(current.author_tid) === myTid && (
+        <button
+          onClick={() => setShowViewers(true)}
+          className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm text-white hover:bg-black/70"
+        >
+          <span aria-hidden>👁</span>
+          <span className="font-semibold">Seen by</span>
+          <span aria-hidden>↑</span>
+        </button>
+      )}
+
+      {showViewers && current && myTid !== undefined && (
+        <StoryViewersModal
+          storyHash={current.hash}
+          myTid={myTid}
+          onClose={() => setShowViewers(false)}
+        />
       )}
 
       {/* Tap zones — left = back, right = forward */}
