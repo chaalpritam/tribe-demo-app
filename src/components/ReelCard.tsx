@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { resolveMediaUrl } from "@/lib/api";
+import LikeButton from "./LikeButton";
 
 /// Single reel render. Uses the native <video> element with autoplay
 /// + loop + muted (browser autoplay policies require muted to start);
@@ -113,28 +114,32 @@ export default function ReelCard({
 
       {/* Right-side action rail */}
       <div className="absolute bottom-24 right-3 flex flex-col items-center gap-5 text-white">
-        <RailButton
-          icon={<HeartIcon />}
-          label={replyCount > 0 ? String(replyCount) : ""}
-          /* Phase 4: REACTION_ADD against hash — same envelope path
-             tweets use, hash is just a TWEET_ADD row with
-             post_kind='reel'. */
-          onClick={() => {}}
-          ariaLabel="Like"
-        />
-        <RailButton
-          icon={<BubbleIcon />}
-          label={replyCount > 0 ? String(replyCount) : ""}
-          onClick={() => {}}
-          ariaLabel="Comment"
-        />
+        {/* LikeButton handles REACTION_ADD/REACTION_REMOVE against
+            the reel's hash. Reels are TWEET_ADD rows in the same
+            messages table as tweets — the existing /v1/reactions
+            endpoint accepts the hash unchanged. */}
+        <div className="reel-like text-white [&_svg]:h-7 [&_svg]:w-7 [&_button]:!text-white">
+          <LikeButton tweetHash={hash} tid={tid} />
+        </div>
+
+        <Link
+          href={`/tweet?hash=${encodeURIComponent(hash)}`}
+          aria-label="Comments"
+          className="flex flex-col items-center"
+        >
+          <span className="text-3xl"><BubbleIcon /></span>
+          {replyCount > 0 && (
+            <span className="mt-0.5 text-xs font-semibold">{replyCount}</span>
+          )}
+        </Link>
+
         <RailButton
           icon={<ShareIcon />}
           onClick={() => {
             /* Copy a deep link the user can paste anywhere. The hash
                doubles as the share id — same convention tweets use. */
             navigator.clipboard?.writeText(
-              `${window.location.origin}/tweet/${encodeURIComponent(hash)}`
+              `${window.location.origin}/tweet?hash=${encodeURIComponent(hash)}`
             );
           }}
           ariaLabel="Share"
