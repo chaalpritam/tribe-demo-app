@@ -23,6 +23,10 @@ interface TweetCardProps {
   pfpUrl?: string;
   myTid?: number;
   replyCount?: number;
+  /** Phase 6: server-side aggregate from /v1/feed correlated subqueries.
+   *  Seeds LikeButton's initial count so the heart shows a real number
+   *  on first paint instead of zero. */
+  reactionCount?: number;
   channelId?: string;
   embeds?: string[];
   /** When set, render a "@user retweeted" header above the card body
@@ -55,6 +59,7 @@ export default function TweetCard({
   pfpUrl,
   myTid,
   replyCount,
+  reactionCount,
   channelId,
   embeds,
   retweetedByTid,
@@ -232,7 +237,11 @@ export default function TweetCard({
               <RetweetButton tweetHash={hash} />
 
               {/* Like button */}
-              <LikeButton tweetHash={hash} tid={myTid ?? tid} />
+              <LikeButton
+                tweetHash={hash}
+                tid={myTid ?? tid}
+                initialCount={reactionCount}
+              />
 
               {/* Bookmark button */}
               <BookmarkButton tweetHash={hash} />

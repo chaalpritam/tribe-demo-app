@@ -10,9 +10,14 @@ import { BROWSER_WALLET_NAME } from "@/lib/browser-wallet/adapter";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import TweetComposer from "@/components/TweetComposer";
 import Feed from "@/components/Feed";
+import StoriesBar from "@/components/StoriesBar";
+import StoryViewer from "@/components/StoryViewer";
+import MediaComposer from "@/components/MediaComposer";
 import RegisterIdentity from "@/components/RegisterIdentity";
 import ImportBackup from "@/components/ImportBackup";
 import BackupReminder from "@/components/BackupReminder";
+import type { Story } from "@/lib/api";
+import { fetchUserStories } from "@/lib/api";
 
 import WalletButton from "@/components/WalletButton";
 
@@ -26,6 +31,8 @@ export default function Home() {
   const [showSetup, setShowSetup] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [reconnectFailed, setReconnectFailed] = useState(false);
+  const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
+  const [showStoryComposer, setShowStoryComposer] = useState(false);
   const connectAttempted = useRef(false);
 
   // Hydrate cached session from localStorage after mount. Doing this
@@ -202,6 +209,28 @@ export default function Home() {
               </div>
             )
           )}
+          <StoriesBar
+            myTid={tid ?? undefined}
+            refreshKey={refreshKey}
+            onStoryClick={(_authorTid, stories) => setViewerStories(stories)}
+            onYourStoryClick={async () => {
+              // "Your story" tap — if I have an active story, open
+              // the viewer; otherwise drop straight into the composer.
+              // That matches IG's behavior (avatar with a + glyph on
+              // the bar always lets you post a new one).
+              if (tid === null) return;
+              try {
+                const r = await fetchUserStories(tid);
+                if (r.stories.length > 0) {
+                  setViewerStories(r.stories);
+                } else {
+                  setShowStoryComposer(true);
+                }
+              } catch {
+                setShowStoryComposer(true);
+              }
+            }}
+          />
           <Feed myTid={tid ?? undefined} refreshKey={refreshKey} />
         </div>
       </div>
@@ -224,6 +253,23 @@ export default function Home() {
           )}
         </div>
       </aside>
+
+      {viewerStories && (
+        <StoryViewer
+          stories={viewerStories}
+          myTid={tid ?? undefined}
+          onClose={() => setViewerStories(null)}
+        />
+      )}
+
+      {showStoryComposer && tid !== null && (
+        <MediaComposer
+          mode="story"
+          tid={tid}
+          onClose={() => setShowStoryComposer(false)}
+          onPublished={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
 
       {showSetup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
