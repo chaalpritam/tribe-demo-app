@@ -28,7 +28,7 @@ function isPairingPayload(value: unknown): value is PairingPayload {
 }
 
 /**
- * tribe-ios encodes the *32-byte ed25519 seed* in the QR (matching
+ * tribe-twitter encodes the *32-byte ed25519 seed* in the QR (matching
  * the way iOS stores app keys in its Keychain). tribe-app's
  * localStorage expects the full 64-byte nacl `secretKey` (seed ||
  * pubkey), which is what tweetnacl.sign.keyPair.fromSeed produces.
@@ -219,7 +219,7 @@ export default function SignInFromMobilePanel() {
             Sign in from mobile
           </h3>
           <p className="mt-1 text-xs text-gray-500">
-            Scan a QR from tribe-ios (Settings → Sign in another device) to
+            Scan a QR from tribe-twitter (Settings → Sign in another device) to
             adopt the same TID + app key on this device.
           </p>
         </div>

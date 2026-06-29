@@ -17,7 +17,7 @@ interface PairingPayload {
 const LAN_PLACEHOLDER = "YOUR-LAN-IP";
 
 // localStorage holds tweetnacl's 64-byte secretKey (seed || pubkey).
-// tribe-ios's AppKey.restore wants just the 32-byte ed25519 seed, so
+// tribe-twitter's AppKey.restore wants just the 32-byte ed25519 seed, so
 // strip the trailing public key before encoding it into the QR.
 function seedFromStoredSecret(b64: string): string | null {
   try {
