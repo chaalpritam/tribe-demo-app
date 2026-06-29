@@ -29,7 +29,7 @@ function isPairingPayload(value: unknown): value is PairingPayload {
 
 /**
  * tribe-twitter encodes the *32-byte ed25519 seed* in the QR (matching
- * the way iOS stores app keys in its Keychain). tribe-app's
+ * the way iOS stores app keys in its Keychain). tribe-twitter-app's
  * localStorage expects the full 64-byte nacl `secretKey` (seed ||
  * pubkey), which is what tweetnacl.sign.keyPair.fromSeed produces.
  * Re-expand here so the adopted account behaves identically to one
